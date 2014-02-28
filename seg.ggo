@@ -1,0 +1,235 @@
+#
+# Copyright 2010-2014 Çağrı Çöltekin <c.coltekin@rug.nl>
+#
+# This file is part of seg, an application for word segmentation.
+#
+# seg is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program as `gpl.txt'. If not, see 
+# <http://www.gnu.org/licenses/>.
+#
+package "seg"
+version "0.1"
+description "description"
+usage "usage"
+purpose "purpose"
+
+
+option "debug" d "debug level" 
+        int default="0" optional
+
+option "quiet" - "be quiet" flag off
+
+option "color" - "color output" flag off
+
+option "progress" - "print progress" 
+       int default="100" optional argoptional
+
+option "input" i "input file name" 
+        string typestr="filename" default="br-phono.txt" optional
+
+option "stress-file" - " filename to read stress patterns from" 
+        string typestr="filename" optional
+
+option "input-format" f "input file format:\n\
+ seg: one segmented utterance/word per line\n\
+ unseg: one unsegmented utterance/word per line\n\
+ mc: MorphoChallenge format, <freq,unseg> pairs" 
+        enum values="seg","unseg","mc" default="seg" optional
+
+option "output" o "output file name" string typestr="filename"
+default="-" optional
+
+option "inlex" I "input lexicon file" 
+        string typestr="filename" optional
+
+option "outlex" O "output lexicon file" 
+        string typestr="filename" default="-" optional
+
+option "shuffle" - "randomize the input utternaces. if SEED is not given, current time is used as seed"
+       long typestr="SEED" default="-1" optional argoptional 
+
+
+section "Options for printing varios segmentation measures"
+
+option "print" p "print predictability measures given in --pred and exit"
+       flag off
+
+option "print-lb" - "print word boundary information for each measure"
+       flag off
+
+option "print-ub" - "print utterance boundary information for each measure"
+       flag off
+
+option "print-header" - "print a header describing each field"
+       flag off
+
+option "print-ph" - "print the phoneme before the predictability measure"
+       flag off
+
+option "print-phng" - "print phoneme ngrams before the predictability measure"
+       flag off
+option "print-ptp" - "Print Hockema's ptp values, and some more" 
+       enum values="jp","tp","mi","sv","h","rtp","rsv","rh","none" default="none"
+       optional multiple argoptional
+
+option "print-wfreq" - "Print frequency of all candidate words upto length N" 
+       int default="11" optional argoptional
+option "print-wfreq-sum" - "Print summary during --print-wfreq" 
+        flag off
+option "print-latex" - "print tabular material with latex separators"
+        flag off
+
+option "print-prf" - "print precision/recall/f-score. If the optional
+argument, N,  is given and positive, print the scores after every N input
+utterance. If N is negative, the print the scores for last N
+utterances."
+        int default="0" optional argoptional 
+
+option "score" - "the segmentation to pick in case of multiple outputs"
+       enum values="first","random","best","any" default="first" 
+       optional
+
+option "score-edges" - "include utterance edges in BP/BR calculation"
+        flag off
+
+section "Options for `lm1' method"
+option "alpha" - "parameter for lm1 segmentation"
+       double typestr="rate" default="0.5" optional
+
+section "Options for predictability based segmentation"
+option "pred-m" - "measure(s) to use for predictability based segmentation"
+       enum values="jp","tp","mi","sv","h","rtp","rsv","rh" 
+       default="tp" optional multiple
+option "pred-norm" - "normalize the predictability scores"
+       flag off
+option "pred-xlen" - "first ngram size for predictability based measures" 
+        int default="1" optional
+option "pred-ylen" - "second ngram size for predictability based measures" 
+        int default="1" optional
+option "pred-xmax" - "max first ngram size for predictability based measures" 
+        int default="3" optional
+option "pred-ymax" - "max second ngram size for predictability based measures" 
+        int default="1" optional
+option "pred-xmin" - "min first ngram size for predictability based measures" 
+        int default="1" optional
+option "pred-ymin" - "min second ngram size for predictability based measures" 
+        int default="1" optional
+option "pred-printw" - "print the final weights at the end of the segmentation" 
+       flag off
+option "pred-printoptions" - "print the options before the segmentation" 
+       flag off
+option "pred-swaplr" - "swap the l & r values for reverse measures" 
+       flag on
+
+section "Options for random segmentation"
+option "random-seed" - "seed for pseudo-random number generator" 
+        int optional
+option "random-rate" - "rate of boundaries, should be a number between 0 (no boundaries) an 1 (all boundaries)" 
+        double default="0.5" optional
+
+section "Options for lexicon based segmentation"
+option "lexicon-partial" - "do partial segmentation" 
+       enum values="all","one","begin","end","beginend","none" default="none"
+       optional argoptional
+
+section "Options for lexicon based segmentation"
+option "lex-nglen" - "ngram size for keeping statistics about the phonemes in the lexicon"
+        int default="5" optional
+option "lex-useprior" - "use utterances in --prior-data as initial lexicon statistics" 
+       flag on
+option "lex-minfreq" - "frequencey of an ngram to qualify as a word"
+        double default="0.0" optional
+option "lex-minent" - "left and right entropy of an ngram to qualify as a word"
+        double default="-1.0" optional
+option "lex-mult" - "multiply lexicon votes N times"
+        int typestr="N" default="1" optional 
+option "lex-wcombine" - "how to combine LF/LC for multiple words" 
+       enum values="best","mean","sum" default="sum"
+       optional
+option "lex-norm" - "normalization method for LF/LC"
+       enum values="none","z" default="none" optional
+option "lex" - "measure(s) to use for lexicon based segmentation"
+       enum values="lc","lf","lp" default="lf" optional multiple
+option "lex-dir" - "direction of lexal measures"
+       enum values="lr","rl","both"
+       default="both" optional
+
+section "Options for stress"
+option "stress" - "method to calculate stress information"
+        enum values="ub","transition","cheat","sylcheat" default="ub" optional
+
+section "Options for utterance boundary segmentation"
+option "ub-nglen" - "phoneme ngram length" 
+        int default="2" optional
+option "ub-ngmin" - "minimum phoneme ngram length" 
+        int default="1" optional
+option "ub-ngmax" - "maximum phoneme ngram length" 
+        int default="3" optional
+option "ub-lmin" - "maximum left phoneme ngram length" 
+        int default="1" optional
+option "ub-lmax" - "minimum left phoneme ngram length" 
+        int default="3" optional
+option "ub-rmin" - "maximum right phoneme ngram length" 
+        int default="1" optional
+option "ub-rmax" - "minimum right phoneme ngram length" 
+        int default="3" optional
+option "ub-type" - "part of the utterance boundaries to use"
+        enum values="ubegin","uend","both" default="both" optional
+option "sub-ngmin" - "minimum ngram length for stress (otherwise inherited from ub-ngmin)" 
+        int default="2" optional
+option "sub-ngmax" - "maximum ngram length for stress (otherwise inherited from ub-ngmax)" 
+        int default="2" optional
+
+section "General options for segmentation"
+
+option "method" m "segmentation method(s), some can be combined"
+        enum values="lexicon","lm","random","pred","ub","lexc","nv","combine"
+        default="combine" optional
+option "cues" c "list of cues to combine"
+        enum values="pred","phon","stress","lex"
+        default="pred" optional multiple
+option "cue-source" - "default source for all cues"
+       enum values="utterances","segments","lexicon"
+       default="utterances" optional
+option "psb-cheat" - "update statistics for source=segm first from the utterances, and later when boundaries are decided" 
+       flag off
+option "pred-source" - "source for all predictability statistics" optional
+       enum values="utterances","segments","lexicon"
+option "phon-source" - "source for all phonotactics statistics" optional
+       enum values="utterances","segments","lexicon"
+option "stress-source" - "source for all stress statistics" optional
+       enum values="utterances","segments","lexicon"
+option "lex-source" - "source for all lexicon statistics" optional
+       enum values="utterances","segments","lexicon"
+option "combine" - "combination method for multiple cues"
+       enum values="mv","wmv","all","any"
+       default="wmv" optional
+option "combine-rate" - "rate of votes for deciding for a boundary"
+       double typestr="rate" default="0.5" optional
+option "boundary-method" - "method to decide for a boundary"
+       enum values="peak","threshold","none","all"
+       default="peak" optional
+option "peak" - "how to count peaks for peak based decision"
+       enum values="strict","relaxed","dual","right","left","lr","strict2"
+       default="dual" optional
+option "threshold" - "threshold to use for deciding boundaries"
+       double typestr="th" default="0.0" optional
+option "norm" - "normalize the measures with given method before using"
+       enum values="none","zscore","mdiff","mdivide" 
+       typestr="method" default="none" optional
+option "vote" - "what to return as vote"
+       enum values="binary","diff","lgdiff" default="binary" optional
+option "prior-data" - "filename to build prior statistics from, if filename is not specified, the statistics are calculated on the first pass on the input file."
+        string typestr="filename" default="input" optional argoptional 
+
+text "For filename arguments `-' means stdin or stdout"

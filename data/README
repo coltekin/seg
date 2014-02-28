@@ -1,0 +1,39 @@
+This directory contains corpora used in the thesis, and in some
+other publications. 
+
+The files 
+
+    br-dict.txt 
+    br-phono.txt 
+    br-text.txt 
+
+are the original files used by Brent (1999) and many subsequent
+studies. Downloaded from Sharon Goldwater's web page (accessed
+2008-06-06). See README.Goldwater for descriptions and terms of 
+use of these files.
+
+There are two slightly modified forms in this br-dict.txt  and
+br-phono.txt files:
+
+    br-dict-modified.txt
+    br-phono-modified.txt
+
+The first one just reorders the file for ease of some operations in
+this project. The second one changes a few segmentations to make
+phonological and the text versions align perfectly. The wrong
+alignment resulted from inconsistent segmentation of the word
+`anymore', and some of letters in the alphabet.
+
+The files
+
+    br-phono-modified.txt.stress
+    br-phono-modified.txt.stress2
+
+replace each phoneme in br-phono-modified.txt, with a digit
+representing the lexical stress on the relevant syllable. The primary
+source of information is the MRC Psycholinguistic Database. A few
+words that were not found in the MRC database is annotated manually.
+The first one follows the MRC database, coding single-syllable words
+as unstressed.  The second file follows Christiansen, Allen and
+Seidenberg (1998), and codes single-syllable words as having primary
+stress.
