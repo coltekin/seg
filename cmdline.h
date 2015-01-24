@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION ""
+#define CMDLINE_PARSER_VERSION "fbd97dd"
 #endif
 
 enum enum_input_format { input_format__NULL = -1, input_format_arg_seg = 0, input_format_arg_unseg, input_format_arg_mc };
@@ -113,6 +113,8 @@ struct gengetopt_args_info
   const char *print_header_help; /**< @brief print a header describing each field help description.  */
   int print_ph_flag;	/**< @brief print the phoneme before the predictability measure (default=off).  */
   const char *print_ph_help; /**< @brief print the phoneme before the predictability measure help description.  */
+  int print_unum_flag;	/**< @brief print the utterance number (default=off).  */
+  const char *print_unum_help; /**< @brief print the utterance number help description.  */
   int print_phng_flag;	/**< @brief print phoneme ngrams before the predictability measure (default=off).  */
   const char *print_phng_help; /**< @brief print phoneme ngrams before the predictability measure help description.  */
   enum enum_print_ptp *print_ptp_arg;	/**< @brief Print Hockema's ptp values, and some more (default='none').  */
@@ -316,6 +318,7 @@ struct gengetopt_args_info
   unsigned int print_ub_given ;	/**< @brief Whether print-ub was given.  */
   unsigned int print_header_given ;	/**< @brief Whether print-header was given.  */
   unsigned int print_ph_given ;	/**< @brief Whether print-ph was given.  */
+  unsigned int print_unum_given ;	/**< @brief Whether print-unum was given.  */
   unsigned int print_phng_given ;	/**< @brief Whether print-phng was given.  */
   unsigned int print_ptp_given ;	/**< @brief Whether print-ptp was given.  */
   unsigned int print_wfreq_given ;	/**< @brief Whether print-wfreq was given.  */

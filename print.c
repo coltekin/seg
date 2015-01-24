@@ -79,10 +79,16 @@ print_pred(FILE *fp, struct input *in)
     }
 
     if (opt.print_header_flag) {
+        if (opt.print_unum_flag) {
+            fprintf(fp, "utterance");
+            first = 0;
+        }
         if (opt.print_ph_flag) { 
+            if (!first) fprintf(fp, "%c", SEP);
             fprintf(fp, "phoneme");
             first = 0;
         } else if (opt.print_phng_flag) {
+            if (!first) fprintf(fp, "%c", SEP);
             fprintf(fp, "phoneme-ng");
             first = 0;
         }
@@ -142,7 +148,12 @@ print_pred(FILE *fp, struct input *in)
                     k++;
                     boundary = 1;
             }
+            if (opt.print_unum_flag) { 
+                fprintf(fp, "%d", i);
+                first = 0;
+            }
             if (opt.print_ph_flag) { 
+                if (!first) fprintf(fp, "%c", SEP);
                 fprintf(fp, "%c", (j == 0) ? '<' : s[j-1]);
                 first = 0;
             } else if (opt.print_phng_flag) { 

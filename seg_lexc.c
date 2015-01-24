@@ -98,7 +98,7 @@ segment_lexc_init(struct input *in)
     }
 
     while (nvotes + ub_votec > mdalloc) {
-        md = realloc(md, BUFSIZ);
+        md = realloc(md, BUFSIZ);   //FIXME: this looks like a bug: the size is constant
         mdalloc += BUFSIZ / sizeof(*md);
     }
 

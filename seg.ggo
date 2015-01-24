@@ -76,6 +76,9 @@ option "print-header" - "print a header describing each field"
 option "print-ph" - "print the phoneme before the predictability measure"
        flag off
 
+option "print-unum" - "print the utterance number"
+       flag off
+
 option "print-phng" - "print phoneme ngrams before the predictability measure"
        flag off
 option "print-ptp" - "Print Hockema's ptp values, and some more" 
