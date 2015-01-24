@@ -6,7 +6,7 @@ found at <http://dissertations.ub.rug.nl/faculties/arts/2011/c.coltekin/>.
 The latest version of this application can be obtained from
 <https://bitbucket.org/coltekin/seg>.
 
-Except a standard C compiler and 'make', you need
+Besides a standard C compiler and 'make', you need
 
 - GLib -- http://developer.gnome.org/glib/
 - GNU scientific library www.gnu.org/s/gsl/
@@ -38,7 +38,7 @@ example runs:
 ```
 - Combine predictability with measures mi, h, and rh and utterance
   boundaries (with default context options). Again, discard the
-  output, and print a LaTex tabular instead of commas-separated values.
+  output, and print a LaTex tabular instead of comma-separated values.
 ```
     ./seg -i data/br-phono.txt \
           -o /dev/null \
@@ -57,7 +57,7 @@ example runs:
         --pred-m=mi
 ```
 
-See the output of './seg -h' for more information on the usage.
+See the output of `seg -h` for more information on the usage.
 
 The code is tested well, and should work fine on any POSIX-like
 environment, but it may not be easy to digest as it also uses some
@@ -75,7 +75,7 @@ information.
 Questions, comments or corrections are welcome at cagri@coltekin.net
 
 If you use this application for your research, please cite the
-relevant publication(s) below:
+relevant publication(s) from the list below :
 
 - Cağrı Çöltekin (2011). "Catching Words in a Stream of Speech:
   Computational simulations of segmenting transcribed child-directed
@@ -83,3 +83,6 @@ relevant publication(s) below:
 - Çağrı Çöltekin John Nerbonne (2014). An explicit statistical model
   of learning lexical segmentation using multiple cues. In: Workshop
   on Cognitive Aspects of Computational Language Learning, EACL 2014
+
+For proper attribution to the data distributed here, please see the
+README files under the data/ directory.
