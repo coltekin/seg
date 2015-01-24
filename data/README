@@ -1,5 +1,7 @@
-This directory contains corpora used in the thesis, and in some
-other publications. 
+This directory contains some corpora used together with this
+application.
+
+* BR Corpus
 
 The files 
 
@@ -37,3 +39,19 @@ The first one follows the MRC database, coding single-syllable words
 as unstressed.  The second file follows Christiansen, Allen and
 Seidenberg (1998), and codes single-syllable words as having primary
 stress.
+
+
+* A larger child-directed corpus extracted from CHILDES
+
+
+The data was extracted from American English section of CHIlDES. All
+CDS from recordings (as of April 2011) where the target child was
+younger than a year was extracted, and transcribed phonemically
+following BR corpus. The relavant files are:
+
+childes-1.phono     phonologically transcribed utterances (using filter2.py)
+childes-1.txt       corresponding orthographic transcriptions
+br-dict2.txt        a slightly modified version of br-dict.txt used for phonemic transcription
+
+childes-filter.sh   The filter expression used on CHILDES .cha files.
+filter2.py          The script that produces the phonemic transcriptions.
