@@ -20,11 +20,14 @@ example runs:
 
 - Segment using predictability cue only, using defaults for the
   context size:
+```
     ./seg -i data/br-phono.txt \
           -m combine \
           --cues=pred \
           --pred-m=mi
+```
 - The same, but discard the output, print precision/recall/f-score 
+```
     ./seg -i data/br-phono.txt \
           -o /dev/null \
           -m combine \
@@ -32,9 +35,11 @@ example runs:
           --pred-m=mi \
           --print-prf \
           --print-head
+```
 - Combine predictability with measures mi, h, and rh and utterance
   boundaries (with default context options). Again, discard the
   output, and print a LaTex tabular instead of commas-separated values.
+```
     ./seg -i data/br-phono.txt \
           -o /dev/null \
           -m combine \
@@ -43,30 +48,38 @@ example runs:
           --print-prf \
           --print-head \
           --print-latex
+```
 - Do not segment, but print the PMI value for every possible boundary
   location:
+```
     ./seg -i data/br-phono.txt \
         --print \
         --pred-m=mi
+```
 
-See the output of './seg -h' for more information on how to use it.
+See the output of './seg -h' for more information on the usage.
 
 The code is tested well, and should work fine on any POSIX-like
 environment, but it may not be easy to digest as it also uses some
-code from other projects. The command line options may be confusing
+code from earlier projects. The command line options may be confusing
 and not well-documented at times. I plan to improve the readability
 and usability of the software while working on a few future projects I
 have in mind.
 
 This software can be used/modified/distributed under the terms of GNU
 General Public License version 3 or later. The licenses and terms of
-use for the corpora included may be different than the license of the
-application. See the README file(s) in the data/ for more information.
+the corpora included may be different than the license of the
+application. See the README file(s) in the data/ directory for more
+information.
 
-Questions, comments or corrections are welcome at c.coltekin@rug.nl.
+Questions, comments or corrections are welcome at cagri@coltekin.net
 
-If you use this application for your research, please cite:
+If you use this application for your research, please cite the
+relevant publication(s) below:
 
-Cağrı Çöltekin (2011). "Catching Words in a Stream of Speech:
-Computational simulations of segmenting transcribed child-directed
-speech." PhD thesis. University of Groningen
+- Cağrı Çöltekin (2011). "Catching Words in a Stream of Speech:
+  Computational simulations of segmenting transcribed child-directed
+  speech." PhD thesis. University of Groningen
+- Çağrı Çöltekin John Nerbonne (2014). An explicit statistical model
+  of learning lexical segmentation using multiple cues. In: Workshop
+  on Cognitive Aspects of Computational Language Learning, EACL 2014
