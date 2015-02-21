@@ -33,8 +33,6 @@
 #include "seg.h"
 #include "io.h"
 #include "seg_lm.h"
-#include "seg_pred.h"
-#include "seg_ub.h"
 #include "seg_nv.h"
 #include "seg_random.h"
 #include "seg_combine.h"
@@ -119,18 +117,6 @@ process_input(struct input *in)
             seg_func = segment_lm;
             seg_cleanup_func = segment_lm_cleanup;
             segment_lm_init(in);
-        break;
-        case method_arg_pred:
-            fprintf(stderr, "Warning `-m pred' is obsolete, use `-m combine' instead.\n");
-            seg_func = segment_pred;
-            seg_cleanup_func = segment_pred_cleanup;
-            segment_pred_init(in);
-        break;
-        case method_arg_ub:
-            fprintf(stderr, "Warning `-m ub' is obsolete, use `-m combine' instead.\n");
-            seg_func = segment_ub;
-            seg_cleanup_func = segment_ub_cleanup;
-            segment_ub_init(in);
         break;
         case method_arg_random:
             seg_func = segment_random;

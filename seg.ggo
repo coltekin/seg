@@ -196,7 +196,7 @@ option "sub-ngmax" - "maximum ngram length for stress (otherwise inherited from 
 section "General options for segmentation"
 
 option "method" m "segmentation method(s), some can be combined"
-        enum values="lexicon","lm","random","pred","ub","lexc","nv","combine"
+        enum values="lexicon","lm","random","lexc","nv","combine"
         default="combine" optional
 option "cues" c "list of cues to combine"
         enum values="pred","phon","stress","lex"

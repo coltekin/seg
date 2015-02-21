@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "fbd97dd"
+#define CMDLINE_PARSER_VERSION "62aad35"
 #endif
 
 enum enum_input_format { input_format__NULL = -1, input_format_arg_seg = 0, input_format_arg_unseg, input_format_arg_mc };
@@ -45,7 +45,7 @@ enum enum_lex { lex__NULL = -1, lex_arg_lc = 0, lex_arg_lf, lex_arg_lp };
 enum enum_lex_dir { lex_dir__NULL = -1, lex_dir_arg_lr = 0, lex_dir_arg_rl, lex_dir_arg_both };
 enum enum_stress { stress__NULL = -1, stress_arg_ub = 0, stress_arg_transition, stress_arg_cheat, stress_arg_sylcheat };
 enum enum_ub_type { ub_type__NULL = -1, ub_type_arg_ubegin = 0, ub_type_arg_uend, ub_type_arg_both };
-enum enum_method { method__NULL = -1, method_arg_lexicon = 0, method_arg_lm, method_arg_random, method_arg_pred, method_arg_ub, method_arg_lexc, method_arg_nv, method_arg_combine };
+enum enum_method { method__NULL = -1, method_arg_lexicon = 0, method_arg_lm, method_arg_random, method_arg_lexc, method_arg_nv, method_arg_combine };
 enum enum_cues { cues__NULL = -1, cues_arg_pred = 0, cues_arg_phon, cues_arg_stress, cues_arg_lex };
 enum enum_cue_source { cue_source__NULL = -1, cue_source_arg_utterances = 0, cue_source_arg_segments, cue_source_arg_lexicon };
 enum enum_pred_source { pred_source__NULL = -1, pred_source_arg_utterances = 0, pred_source_arg_segments, pred_source_arg_lexicon };

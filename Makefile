@@ -9,9 +9,7 @@ SRCS=seg.c io.c segparse.c phonstats.c score.c \
 		mdata.c \
 		ctxlex.c \
 		seg_lm.c \
-		seg_pred.c \
 		seg_random.c \
-		seg_ub.c \
 		seg_lexicon.c \
 		seg_nv.c \
 		seg_combine.c \
