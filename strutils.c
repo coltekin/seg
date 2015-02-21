@@ -60,7 +60,7 @@ str_rstrip(char *s, const char *rm)
 char *
 str_lstrip(char *s, const char *rm)
 {
-    while (*s && strchr(rm, *s))
+    while (s != NULL && *s && strchr(rm, *s)) 
         s++;
     return s;
 }

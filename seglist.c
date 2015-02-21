@@ -19,15 +19,15 @@
 */
 
 /*
- * The seglist structure holds an array of segmentations eacho 
+ * The seglist structure holds an array of segmentations each
  * of which are an array of offset numbers indicating the location
  * of the boundaries. The members of the strucute are
  *   nsegs      Number of segmentations (length of segs array)
  *   nalloc     Internal. keeps the allocated memory
  *   **segs     An array of segmentation arrays
  *              Each member of the array is an array of integers where
- *              the first item is the length of the array. The borders of 
- *              the complete string <0,len(s)> is not included in the 
+ *              the first item is the length of the array. The borders of
+ *              the complete string <0,len(s)> is not included in the
  *              segmentation array.
  *              
  */
