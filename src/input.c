@@ -52,6 +52,7 @@ struct input *input_read(const char *finput,
     ret->sigma_nph = 0;
     ret->sigma_nsyl = 0;
     ret->sigma_alloc = 0;
+    ret->sigma_len = 0;
     ret->sigma_idx = NULL;
     ret->mode = mode;
     ret->file_name = finput;
@@ -113,18 +114,20 @@ struct utterance *utterance_new(uint8_t mode, size_t maxlen)
 
     u->phon = malloc(sizeof *u->phon);
     u->phon->len = 0;
-    u->phon->seq = malloc(maxlen * sizeof *(u->phon->seq));
-    u->phon->feat = malloc(maxlen * sizeof *(u->phon->feat));
-    u->gs_seg = malloc(maxlen * sizeof *(u->gs_seg));
+    u->phon->seq = malloc(maxlen * sizeof *u->phon->seq);
+    u->phon->feat = malloc(maxlen * sizeof *u->phon->feat);
+    u->gs_seg = malloc(sizeof *u->gs_seg);
+    u->gs_seg->bound = malloc(maxlen * sizeof *u->gs_seg->bound);
     u->gs_seg->len = 0;
     u->syl = NULL;
     u->syl_seg = NULL;
     if (mode & (INPMODE_SYL | INPMODE_PSYL)) {
         u->syl = malloc(sizeof *(u->syl));
         u->syl->len = 0;
-        u->syl->seq = malloc(maxlen * sizeof *(u->syl->seq));
-        u->syl->feat = malloc(maxlen * sizeof *(u->syl->feat));
-        u->syl_seg = malloc(maxlen * sizeof *(u->syl_seg));
+        u->syl->seq = malloc(maxlen * sizeof *u->syl->seq);
+        u->syl->feat = malloc(maxlen * sizeof *u->syl->feat);
+        u->syl_seg = malloc(sizeof *u->syl_seg);
+        u->syl_seg->bound = malloc(maxlen * sizeof *u->syl_seg->bound);
         u->syl_seg->len = 0;
     } 
     return u;
@@ -165,7 +168,7 @@ struct utterance *tokenize(struct input *inp,
         if (*sym == ' ' || *sym == '\t') { // boundary 
             u->gs_seg->bound[u->gs_seg->len] = u->phon->len;
             u->gs_seg->len += 1;
-            while (*(p + 1) == ' ' || *(p + 1) == '\t') p++;
+            while (*p == ' ' || *p == '\t') p++;
             if (inp->mode * INPMODE_SYL) {
                 u->syl_seg->bound[u->syl_seg->len] = u->phon->len;
                 u->syl_seg->len += 1;

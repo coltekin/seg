@@ -58,7 +58,7 @@ static double wordscore(struct unitseq *u, int first, int last,
     } else {            // new word
         size_t i;
         score = log(1 - o->alpha);
-        for (i = first; i <= last; i++) {
+        for (i = first; i < last; i++) {
             score += log ((double) (o->u_count[u->seq[i]] + 1) /
                           (double) (o->nunits + 1));
         }
@@ -130,11 +130,11 @@ segment_lm(struct seg_handle *h, size_t idx)
 
 
     if (seg->len) {
-        seg->bound = malloc(sizeof *seg->bound);
+        seg->bound = malloc(seg->len * sizeof *seg->bound);
         lastch = len;
         firstch = bestst[lastch];
         j = seg->len;
-        for (j = seg->len; j > 0; j--) {
+        for (j = seg->len - 1; j >= 0; j--) {
             seg->bound[j] = firstch;
             lastch = firstch - 1;
             firstch = bestst[lastch];
@@ -165,8 +165,7 @@ static void segment_lm_update(struct unitseq *u, struct segmentation *seg,
         first = last;
     }
     trie_insert(o->lex, u->seq + first, u->len - first);
-    for (j = first; ; j++) {
-        if (u->seq[j] == 0) break;
+    for (j = first; j < u->len; j++) {
         o->u_count[u->seq[j]] += 1;
     }
 }
