@@ -27,7 +27,6 @@
 #include "cmdline.h"
 #include "seglist.h"
 #include "input.h"
-#include "seg_combine.h"
 #include "seg_lm.h"
 /*
 #include "seg_nv.h"

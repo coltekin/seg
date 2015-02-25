@@ -78,6 +78,7 @@ struct seg_handle *segment_lm_init(struct input *in, float alpha,
 
     h->method = SEG_LM;
     h->in = in;
+    h->unit = unit;
     h->options = o;
     o->alpha = alpha;
     o->lex = t;

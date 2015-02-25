@@ -37,7 +37,6 @@
 #include <time.h>
 #include <string.h>
 #include <assert.h>
-#include "options.h"
 #include "strutils.h"
 #include "seglist.h"
 #define   ABS(N)    ( (N) >= 0 ? (N) : -(N) )
