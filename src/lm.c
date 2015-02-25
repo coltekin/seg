@@ -36,24 +36,22 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
 #include <string.h>
 #include <math.h>
 #include <assert.h>
-#include "cmdline.h"
-#include "lexicon.h"
-#include "strutils.h"
 #include "input.h"
 #include "seg.h"
-#include "seg_lm.h"
+#include "lm.h"
 
+static void segment_lm_update(struct unitseq *u, struct segmentation *seg, 
+        struct seg_lm_options *o);
 
-static double wordscore(segunit_t *seq, int first, int last, 
+static double wordscore(struct unitseq *u, int first, int last, 
         struct seg_lm_options *o)
 {
     double  score;
 
-    score = trie_relfreq_span(o->lex, seq, first, last - first +1);
+    score = trie_relfreq(o->lex, u->seq + first, last - first);
 
     if (score != 0.0) { // existing word
         score = log(o->alpha) + log(score);
@@ -61,7 +59,7 @@ static double wordscore(segunit_t *seq, int first, int last,
         size_t i;
         score = log(1 - o->alpha);
         for (i = first; i <= last; i++) {
-            score += log ((double) (o->u_count[seq[i]] + 1) /
+            score += log ((double) (o->u_count[u->seq[i]] + 1) /
                           (double) (o->nunits + 1));
         }
     }
@@ -88,17 +86,16 @@ struct seg_handle *segment_lm_init(struct input *in, float alpha,
     return h;
 }
 
-struct seglist * 
-segment_lm(struct seg_handle *h, int idx)
+struct segmentation * 
+segment_lm(struct seg_handle *h, size_t idx)
 {
     struct utterance *u = h->in->u[idx];
-    segunit_t *seq = (h->unit == SEG_PHON) ?  u->phon : u->syl;
-    int len =(h->unit == SEG_PHON) ? u->nphon : u->nsyl;
-    struct seglist *segl;
-    int j, firstch, lastch, nsegs;
+    struct unitseq *seq = (h->unit == SEG_PHON) ?  u->phon : u->syl;
+    int len =(h->unit == SEG_PHON) ? u->phon->len : u->syl->len;
+    int j, firstch, lastch;
     double  bestsc[len];
     int  bestst[len];
-    segunit_t seg[len];
+    struct segmentation *seg = malloc(sizeof *seg);
     struct seg_lm_options *opt = h->options;
 
     for (j = 0; j < len; j++) {
@@ -125,57 +122,52 @@ segment_lm(struct seg_handle *h, int idx)
     //
     // first pass: get the number of segments
     firstch = bestst[len];
-    nsegs = 0;
+    seg->len = 0;
     while (firstch > 0) {
-        nsegs++;
+        seg->len += 1;
         firstch = bestst[firstch - 1];
     }
 
 
-    segl = seglist_new();
-    // second pass: add them to segment list
-    if (nsegs) {
-        seg[0] = nsegs;
+    if (seg->len) {
+        seg->bound = malloc(sizeof *seg->bound);
         lastch = len;
         firstch = bestst[lastch];
-        while (nsegs) {
-            seg[nsegs] = firstch;
+        j = seg->len;
+        for (j = seg->len; j > 0; j--) {
+            seg->bound[j] = firstch;
             lastch = firstch - 1;
             firstch = bestst[lastch];
-            nsegs--;
         }
-        seglist_add(segl, seg);
     } else {
-        segl->nsegs = 1;
-        segl->segs = malloc(sizeof *segl->segs);
-        segl->segs[0] = NULL;
+        free(seg);
+        seg = NULL;
     }
 
-    segment_lm_update(seq, segl, opt);
+    segment_lm_update(seq, seg, opt);
 
-    return segl;
+    return seg;
 }
 
-void segment_lm_update(segunit_t *seq, struct seglist *segl, 
+static void segment_lm_update(struct unitseq *u, struct segmentation *seg, 
         struct seg_lm_options *o)
 {
     size_t i, j, first, last;
-    segunit_t *seg = segl->segs[0];
 
     first = 0;
-    for (i = 0; i < seg[0]; i++) {
-        last =  seg[i + 1];
-        trie_insert_span(o->lex, seq, first, last - first);
+    for (i = 0; seg != NULL && i < seg->len; i++) {
+        last = seg->bound[i];
+        trie_insert(o->lex, u->seq + first,  last - first);
         for (j = first; j < last; j++) {
-            o->u_count[seq[j]] += 1;
+            o->u_count[u->seq[j]] += 1;
         }
         o->nunits += last - first;
         first = last;
     }
-    trie_insert_span(o->lex, seq, first, 0);
+    trie_insert(o->lex, u->seq + first, u->len - first);
     for (j = first; ; j++) {
-        if (seq[j] == 0) break;
-        o->u_count[seq[j]] += 1;
+        if (u->seq[j] == 0) break;
+        o->u_count[u->seq[j]] += 1;
     }
 }
 

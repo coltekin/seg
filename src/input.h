@@ -5,15 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <glib.h>
-#include "seglist.h"
-
-/* segunit_t is the type used for indexes of (basic) units in the lexicon.
- * It is an unsigned integer type that is large enough to represent
- * all units used (e.g., all phonemes or syllables). Using the
- * smallest unit may save lots of memory.
- */
-typedef uint16_t segunit_t;
-typedef uint8_t  segfeature_t;
+#include "seg.h"
 
 #define COMMENT_CHAR '#'
 #define SEG_DELIM " "
@@ -22,24 +14,48 @@ typedef uint8_t  segfeature_t;
 #define SYM_BOS "<"     // beginning of sequence (e.g., utternace)
 #define SYM_EOS ">"     // end of sequence
 
+/**
+ * struct basic_unit - the basic/indivisible unit
+ * @str:               a string representation, used for reading/writing
+ * @feat:              a bit vector of features, it should be one of UFEAT_*
+ *
+ * This structure holds the information about the unit types, not
+ * tokens. Unit tokens, represented below with struct segunit, holds a
+ * pointer to a struct basic_unit together with other information
+ * specific to a particular token.
+ */
 struct basic_unit {
-    char *str;      // string representation of the unit
-    segfeature_t feat;   // features as a bit mask
+    char *str;
+    segfeature_t feat;
 };
 
+/**
+ * struct units    - the structure for holding a sequence of basic unit tokens
+ * @len:             the length of the sequence.
+ * @seq:             the indexes pointing to the corresponding 
+ *                   'basic_unit's in the input lexicon. 
+ * @feat:            an array features for each unit. 
+ *                   For the length number of
+ *                   features one should check seq[0].
+ */
+struct unitseq {
+    size_t len;
+    segunit_t *seq;
+    segfeature_t *feat;
+};
+
+/**
+ * struct utterance - representation of an utterance
+ * @phon:             the sequence of phonemes that form the utterance
+ * @syl:              the sequence of syllables that form the utterance,
+ *                    may be NULL.
+ */
 struct utterance {
-    segunit_t *phon; // an array of phon(eme)s
-    segunit_t *syl;  // an array of syllables (for convenince)
-    segunit_t nphon;
-    segunit_t nsyl;
-    segunit_t *gs_seg;  // gold-standard segmentation
-    segunit_t *syl_seg; // syllable segmentation
-    segfeature_t *feat; // array of supasegmental or distorted features
+    struct unitseq *phon;
+    struct unitseq *syl;
+    struct segmentation *gs_seg;  // gold-standard segmentation
+    struct segmentation *syl_seg; // syllable segmentation
 };
-
-#define PHONFEAT_STRESS1 1
-#define PHONFEAT_STRESS2 (1 << 1)
-#define PHONFEAT_ISSYL   (1 << 2) // entry is a syllable, not phoneme
 
 struct input {
     struct utterance **u;     // array of utterances 
@@ -67,15 +83,6 @@ struct input {
 #define INPMODE_STRSEXT (1 << 3) // assign stress from an external file
 #define INPMODE_STRSIPA (1 << 4) // use IPA stress assignments
 
-/* Output from a segmentation algorithm - may contain multiple
- * segmentationos per utterance.
- */
-struct output {
-    size_t              len;
-    size_t              alloc; // for memory management
-    struct seglist      **seglist; // an array of pointers to 'seglist's
-};
-
 
 /* input_read() - read the input file(s) and retrun as a struct input
  * @finput        main input file with phonemes
@@ -100,39 +107,47 @@ void input_shuffle(struct input *in, unsigned seed);
 void input_free(struct input *in);
 
 
-/* output_new() - create a new output structure
- * @len           number of utterances, for allocating memory at once
- *                if it is known in advance. Otherwise output_add()
- *                will realloc it as needed in BUFSIZ steps.
+/**
+ * segment_to_str() - convert a given segmentation to its string
+ *                    representation.
+ * @in:               input structure.
+ * @idx:              index of the utterance in the input strucutre
+ *                    that segmentation belongs to.
+ * @seg:              a single segmentation
  */
-struct output *output_new(size_t len);
+char *segment_to_str(struct input *in, size_t idx, struct segmentation *seg);
+
+/**
+ * write_segs() - output segmentations in @segs to @outf
+ * @outf:         name of the file the output should be written. `-'
+ *                means standard output.
+ * @segs:         array of segmentations (as described in seg.h). The
+ *                number of segmentations must be equal to @inp->len.
+ * @inp:          input structure, that contains the lexicon for
+ *                converting indices in @segs to strings.
+ */
+void write_segs(char *outf, struct segmentation **segs, struct input *inp);
 
 
-/* output_add() - add a new segmentation list to the output structure
- * @out           pointer to the output structure
- * @segs          the segmentations to add
+/** TODO: clean up
+ * struct output - Output from a segmentation algorithm
+ * @in:            The input that the output is associated with.
+ * @seglist:       an array of segmentations. 
  *
- * The segmentation list @segs is not copied. The caller should make
- * sure that they are valid during the life time of @out.
+ * Each segmentation in @seglist is an array of segunit_t. The first
+ * element (with index 0) specifies the number of segments, and the
+ * remaining elements indicate the location of the boundaries. The
+ * beginning and the end of the whole sequence is not listed.
+ * Locations are with respect to the units in in->phon.  For example,
+ * assuming each letter is a phoneme, the segmentation 'a def gh' wuld
+ * be represented as {2, 1, 4}.
  *
- */
-void output_add(struct output *out, struct seglist *segs);
-
-/* output_free() - free the memory allocated for the struct output @out
- * @out            the output struture to free
- * @free_seglist   if set to true, the contents of the seglist will
- *                 also be freed. Otherwise only the pointers to the
- *                 lists and the structure itself is destroyed.
- */
-void output_free(struct output *out, bool free_seglist);
-
-/* output_write() - write segmentations to the file @outf
- * @outf            The output file
- * @out             The output structure that holds the output of a
- *                  segmentation
- * @inp             The input 
- */
-void output_write(char *outf, struct output *out, struct input *inp);
+ * The length of the @seglist lhas to be in->len.
+struct output {
+    struct input        *in;
+    segunit_t           **seglist; // an array of pointers to segmentations
+};
+*/
 
 #endif // _INPUT_H
 

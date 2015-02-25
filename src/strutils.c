@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "strutils.h"
+#include "xalloc.h"
 
 
 /* 
@@ -317,7 +318,7 @@ str_astrcat(char **dst, char *src)
     } else {
         int need = bufsize - (bufused + n);
         if (need > 0) {
-            buf = realloc (buf, (need / BUFSIZ + 1) * BUFSIZ);
+            buf = xrealloc (buf, (need / BUFSIZ + 1) * BUFSIZ);
         }
         bufused += n;
         strcat(buf, src);

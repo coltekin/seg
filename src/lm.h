@@ -33,10 +33,7 @@ struct seg_lm_options {
 struct seg_handle *segment_lm_init(struct input *in, float alpha, 
         enum seg_unit unit);
 
-struct seglist *segment_lm(struct seg_handle *h, int i);
-
-void segment_lm_update(segunit_t *seq, struct seglist *segl, 
-        struct seg_lm_options *o);
+struct segmentation *segment_lm(struct seg_handle *h, size_t i);
 
 void segment_lm_cleanup(struct seg_handle *h);
 

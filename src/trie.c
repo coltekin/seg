@@ -15,7 +15,7 @@ struct trie *trie_init(size_t size)
     return t;
 }
 
-void trie_free_recursive(struct trie_node *node, size_t size)
+static void trie_free_recursive(struct trie_node *node, size_t size)
 {
     if (node->children != NULL) {
         size_t i;
@@ -34,29 +34,21 @@ void trie_free(struct trie *trie)
     free(trie);
 }
 
-void trie_insert(struct trie *trie, segunit_t *seq)
-{
-    trie_insert_span(trie, seq, 0, 0);
-}
-
-void trie_insert_span(struct trie *trie, segunit_t *seq,
-        size_t start, size_t length)
+void trie_insert(struct trie *trie, segunit_t *seq, size_t len)
 {
     struct trie_node *node = trie->root;
     size_t i;
 
     node->count += 1;
-    for (i = 0; (length) ? (i < length) : true; i++) {
-        segunit_t *val = seq + start + i;
-        if (*val == 0)
-            break;
+    for (i = 0; i < len; i++) {
+        segunit_t edge = seq[i];
         if (node->children == NULL) {
             node->children = calloc(trie->size, sizeof *node->children);
         }
-        if (node->children[*val] == NULL) {
-            node->children[*val] = calloc(1, sizeof *node->children[*val]);
+        if (node->children[edge] == NULL) {
+            node->children[edge] = calloc(1, sizeof *node->children[edge]);
         }
-        node = node->children[*val];
+        node = node->children[edge];
         node->count += 1;
     }
     if (node->count_final == 0)
@@ -64,42 +56,39 @@ void trie_insert_span(struct trie *trie, segunit_t *seq,
     node->count_final += 1;
 }
 
-struct trie_node *trie_lookup(struct trie *trie, segunit_t *seq)
-{
-    return trie_lookup_span(trie, seq, 0, 0);
-}
-
-struct trie_node *trie_lookup_span(struct trie *trie, segunit_t *seq,
-        size_t start, size_t length)
+struct trie_node *trie_lookup(struct trie *trie, segunit_t *seq, size_t len)
 {
     struct trie_node *node = trie->root;
     size_t i;
 
-    for (i = 0; (length) ? (i < length) : true; i++) {
-        segunit_t *val = seq + start + i;
-        if (*val == 0)
-            break;
+    for (i = 0; i < len; i++) {
+        segunit_t edge = seq[i];
         if (node->children == NULL) {
                 return NULL;
-        } else if (node->children[*val] == NULL) {
+        } else if (node->children[edge] == NULL) {
                 return NULL;
         } else {
-            node = node->children[*val];
+            node = node->children[edge];
         }
     }
     return node;
 }
 
-
-double trie_relfreq_word(struct trie *trie, segunit_t *seq)
+size_t trie_freq(struct trie *trie, segunit_t *seq, size_t len)
 {
-    return trie_relfreq_span(trie, seq, 0, 0);
+    struct trie_node *n = trie_lookup(trie, seq, len);
+    return n->count_final;
 }
 
-double trie_relfreq_span(struct trie *trie, segunit_t *seq, 
-        size_t start, size_t length)
+size_t trie_prefix_freq(struct trie *trie, segunit_t *seq, size_t len)
 {
-    struct trie_node *n = trie_lookup_span(trie, seq, start, length);
+    struct trie_node *n = trie_lookup(trie, seq, len);
+    return n->count;
+}
+
+double trie_relfreq(struct trie *trie, segunit_t *seq, size_t len)
+{
+    struct trie_node *n = trie_lookup(trie, seq, len);
 
     if (n == NULL) 
         return 0.0;

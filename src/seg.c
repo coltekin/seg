@@ -25,9 +25,8 @@
 #include <assert.h>
 #include "lexicon.h"
 #include "cmdline.h"
-#include "seglist.h"
 #include "input.h"
-#include "seg_lm.h"
+#include "lm.h"
 /*
 #include "seg_nv.h"
 #include "seg_random.h"
@@ -113,13 +112,12 @@ int main(int argc, char **argv)
  * This is where the main loop over the input is run.
  *
  */
-void 
-process_input(struct input *in)
+void process_input(struct input *in)
 {
-    struct seglist *(*seg_func)(struct seg_handle *, int);
-    void (*seg_cleanup_func)();
-    struct output *out = output_new(in->len);
-    int i;
+    struct segmentation *(*seg_func)(struct seg_handle *, size_t);
+    void (*seg_cleanup_func)(struct seg_handle *);
+    struct segmentation **out = malloc(in->len * sizeof *out);
+    size_t i;
     struct seg_handle *seg_h;
 /*
     size_t prf_off = 0;
@@ -171,12 +169,10 @@ process_input(struct input *in)
 */
 
     for (i = 0; i < in->len; i++) {
-        struct seglist *segl = NULL;
-        segl = seg_func(seg_h, i);
-        output_add(out, segl);
+        out[i] = seg_func(seg_h, i);
         if (opt.progress_given) {
             if((i %  opt.progress_arg) == 0) {
-                fprintf(stderr,"%*d/%zu\r", 6, i, in->len);
+                fprintf(stderr,"%*zu/%zu\r", 6, i, in->len);
             }
         }
 
@@ -202,8 +198,12 @@ process_input(struct input *in)
 
     seg_cleanup_func(seg_h);
 
-    output_write(opt.output_arg, out, in);
-    output_free(out, true);
+    write_segs(opt.output_arg, out, in);
+    for (i = 0; i < in->len; i++) {
+        free(out[i]);
+    }
+    free(out);
+
 
 /*
     if (opt.outlex_given){

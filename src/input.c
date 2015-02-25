@@ -2,6 +2,8 @@
 #include <string.h>
 #include "input.h"
 #include "strutils.h"
+#include "xalloc.h"
+
 
 void input_add_utterance(struct input *inp, 
         const char *str_phon, 
@@ -55,10 +57,6 @@ struct input *input_read(const char *finput,
     ret->file_name = finput;
     ret->sfile_name = fstress;
 
-    sigma_add_phon(ret, SYM_BOS);
-    sigma_add_phon(ret, SYM_EOS);
-    sigma_add_syl(ret, SYM_BOS);
-    sigma_add_syl(ret, SYM_EOS);
 
     do {
         char *buf_phon = NULL;
@@ -99,16 +97,8 @@ void input_add_utterance(struct input *inp,
 {
 
     if (inp->alloc <= inp->len) {
-        struct utterance **tmp = NULL;
-
         inp->alloc += BUFSIZ;
-        tmp = realloc(inp->u, inp->alloc * (sizeof (struct uttterance *)));
-        if (tmp) {
-           inp->u = tmp;
-        } else {
-            fprintf(stderr, "unable to allocate memory\n");
-            exit(-1);
-        }
+        inp->u = xrealloc(inp->u, inp->alloc * (sizeof (struct uttterance *)));
     }
 
     inp->u[inp->len] = tokenize(inp, str_phon, str_stress);
@@ -117,28 +107,36 @@ void input_add_utterance(struct input *inp,
 
 }
 
+struct utterance *utterance_new(uint8_t mode, size_t maxlen)
+{
+    struct utterance *u = malloc(sizeof *u);
+
+    u->phon = malloc(sizeof *u->phon);
+    u->phon->len = 0;
+    u->phon->seq = malloc(maxlen * sizeof *(u->phon->seq));
+    u->phon->feat = malloc(maxlen * sizeof *(u->phon->feat));
+    u->gs_seg = malloc(maxlen * sizeof *(u->gs_seg));
+    u->gs_seg->len = 0;
+    u->syl = NULL;
+    u->syl_seg = NULL;
+    if (mode & (INPMODE_SYL | INPMODE_PSYL)) {
+        u->syl = malloc(sizeof *(u->syl));
+        u->syl->len = 0;
+        u->syl->seq = malloc(maxlen * sizeof *(u->syl->seq));
+        u->syl->feat = malloc(maxlen * sizeof *(u->syl->feat));
+        u->syl_seg = malloc(maxlen * sizeof *(u->syl_seg));
+        u->syl_seg->len = 0;
+    } 
+    return u;
+}
+
 struct utterance *tokenize(struct input *inp, 
         const char *str_phon, 
         const char *str_stress) 
 {
     const char *p = str_phon;
-    size_t maxlen = strlen(str_phon) + 3;
-    struct utterance *u = malloc(sizeof *u);
-
-    u->phon = malloc(maxlen * sizeof *(u->phon));
-    u->feat = malloc(maxlen * sizeof *(u->feat));
-    u->nphon = 0;
-    u->nsyl = 0;
-    u->gs_seg = malloc(maxlen * sizeof *(u->gs_seg));
-    u->gs_seg[0] = 0;
-    u->syl = NULL;
-    u->syl_seg = NULL;
-    if (inp->mode & (INPMODE_SYL | INPMODE_PSYL)) {
-        u->syl = malloc(maxlen * sizeof *(u->phon));
-        u->syl_seg = malloc(maxlen * sizeof *(u->syl_seg));
-        u->syl_seg[0] = 0;
-    } 
-
+    size_t maxlen = strlen(str_phon) + 1;
+    struct utterance  *u = utterance_new(inp->mode, maxlen);
 
     uint8_t stress = 0;
     bool syl_boundary = false;
@@ -165,56 +163,58 @@ struct utterance *tokenize(struct input *inp,
         }
 
         if (*sym == ' ' || *sym == '\t') { // boundary 
-            u->gs_seg[0] += 1;
-            u->gs_seg[u->gs_seg[0]] = u->nphon;
+            u->gs_seg->bound[u->gs_seg->len] = u->phon->len;
+            u->gs_seg->len += 1;
             while (*(p + 1) == ' ' || *(p + 1) == '\t') p++;
             if (inp->mode * INPMODE_SYL) {
-                u->syl_seg[0] += 1;
-                u->syl_seg[u->syl_seg[0]] = u->nphon;
+                u->syl_seg->bound[u->syl_seg->len] = u->phon->len;
+                u->syl_seg->len += 1;
                 syl_boundary = true;
             }
         } else if ((inp->mode * INPMODE_SYL) && *sym == '.') {
-            u->syl_seg[0] += 1;
-            u->syl_seg[u->syl_seg[0]] = u->nphon;
+            u->syl_seg->bound[u->syl_seg->len] = u->phon->len;
+            u->syl_seg->len += 1;
             syl_boundary = true;
         } else if (!strcmp("ˈ", sym)) { // primary stress
-            stress = PHONFEAT_STRESS1;
+            stress = SEGFEAT_STRESS1;
         } else if (!strcmp("ˌ", sym)) { // secondary stress
-            stress = PHONFEAT_STRESS2;
+            stress = SEGFEAT_STRESS2;
         // TODO: diacratic processing goes in here.
         } else {
             // TODO: deal with pseudo-syllabification here.
 
-            u->phon[u->nphon] = sigma_add_phon(inp, sym);
-            u->feat[u->nphon] |= stress;
+            u->phon->seq[u->phon->len] = sigma_add_phon(inp, sym);
+            u->phon->feat[u->phon->len] |= stress;
             if (inp->mode & (INPMODE_SYL | INPMODE_PSYL)) {
                 if(syl_boundary) {
-                    u->syl[u->nsyl] = sigma_add_syl(inp, syl_tmp);
+                    u->syl->seq[u->syl->len] = sigma_add_syl(inp, syl_tmp);
+                    u->syl->feat[u->syl->len] = SEGFEAT_ISSYL | stress;
                     syl_tmp[0]= '\0';
-                    u->nsyl += 1;
+                    u->syl->len += 1;
                     stress = 0;
                     syl_boundary = false;
                 }
                 strcat(syl_tmp, sym);
                 if (*p == '\0') {
-                    u->syl[u->nsyl] = sigma_add_syl(inp, syl_tmp);
-                    u->nsyl += 1;
+                    u->syl->seq[u->syl->len] = sigma_add_syl(inp, syl_tmp);
+                    u->syl->len += 1;
                 }
             } else {
                 stress = 0;
             }
-            u->nphon += 1;
+            u->phon->len += 1;
         }
     }
 
-    u->phon[u->nphon] = 0;
-    u->feat[u->nphon] = 0;
-
-    u->phon = realloc(u->phon, (u->nphon + 1) * sizeof *(u->phon));
-    u->feat = realloc(u->feat, (u->nphon + 1) * sizeof *(u->feat));
+    u->phon->seq = xrealloc(u->phon->seq, 
+            (u->phon->len + 1) * sizeof *(u->phon->seq));
+    u->phon->feat = xrealloc(u->phon->feat, 
+            (u->phon->len + 1) * sizeof *(u->phon->feat));
     if (u->syl != NULL) {
-        u->syl[u->nsyl] = 0;
-        u->syl = realloc(u->syl, (u->nsyl + 1) * sizeof *(u->syl));
+        u->syl->seq = xrealloc(u->syl->seq, 
+                (u->syl->len + 1) * sizeof *(u->syl->seq));
+        u->syl->feat = xrealloc(u->syl->feat, 
+                (u->syl->len + 1) * sizeof *(u->syl->feat));
     }
     return u;
 }
@@ -251,32 +251,29 @@ segunit_t sigma_add(struct input *inp, const char *p, uint8_t type)
 
     // NOTE: sigma[0] is special, not used.
     if (inp->sigma_alloc <= (inp->sigma_len + 1)) {
-        struct basic_unit *tmp = NULL;
-        segunit_t  *tmpidx = NULL;
 
         inp->sigma_alloc += BUFSIZ;
-        tmp = realloc(inp->sigma, 
+        inp->sigma = xrealloc(inp->sigma, 
                 inp->sigma_alloc * (sizeof *(inp->sigma)));
-        if (tmp) {
-           inp->sigma = tmp;
-        } else {
-            fprintf(stderr, "unable to allocate memory\n");
-            exit(-1);
-        }
 
-        tmpidx = realloc(inp->sigma_idx, 
+        inp->sigma_idx = xrealloc(inp->sigma_idx, 
                 inp->sigma_alloc * (sizeof *(inp->sigma_idx)));
-        if (tmpidx) {
-            size_t i;
-            inp->sigma_idx = tmpidx;
-            for (i = 0; i < BUFSIZ; i++) {
-                inp->sigma_idx[inp->sigma_alloc - i - 1] = 
-                    inp->sigma_alloc - i - 1;
-            }
-        } else {
-            fprintf(stderr, "unable to allocate memory\n");
-            exit(-1);
+        size_t i;
+        for (i = 0; i < BUFSIZ; i++) {
+            inp->sigma_idx[inp->sigma_alloc - i - 1] = 
+                inp->sigma_alloc - i - 1;
         }
+    }
+
+    /* beginning/end of sequence symbols are added only to the lexicon,
+     * not to the reverse lookup hashes 
+     */
+    if (inp->sigma_len == 0) {
+        inp->sigma[1].str = strdup(SYM_BOS);
+        inp->sigma[1].feat = 0;
+        inp->sigma[2].str = strdup(SYM_EOS);
+        inp->sigma[2].feat = 0;
+        inp->sigma_len += 2;
     }
 
     inp->sigma_len += 1;
@@ -290,7 +287,7 @@ segunit_t sigma_add(struct input *inp, const char *p, uint8_t type)
     } else if(type == SIGMA_SYL) {
         g_hash_table_insert(inp->hash_syl, inp->sigma[inp->sigma_len].str, 
                 &(inp->sigma_idx[inp->sigma_len]));
-        inp->sigma[inp->sigma_len].feat |= PHONFEAT_ISSYL;
+        inp->sigma[inp->sigma_len].feat |= SEGFEAT_ISSYL;
     }
 
     return inp->sigma_len;
@@ -327,11 +324,16 @@ static void free_sigma(struct basic_unit *u, size_t len)
 
 static void free_utterance(struct utterance *u)
 {
-    if (u->phon) free(u->phon);
-    if (u->syl) free(u->syl);
+    if (u->phon) {
+        free(u->phon->seq);
+        free(u->phon);
+    }
+    if (u->syl) {
+        free(u->syl->seq);
+        free(u->syl);
+    }
     if (u->gs_seg) free(u->gs_seg);
     if (u->syl_seg) free(u->syl_seg);
-    if (u->feat) free(u->feat);
     free(u);
 }
 
@@ -348,55 +350,48 @@ void input_free(struct input *in)
 }
 
 
-struct output *output_new(size_t len)
+static char *append_str(char *buf, char *str, size_t *idx, size_t *buf_alloc)
 {
-    struct output *ret = malloc(sizeof *ret);
-
-    if (len != 0) {
-        ret->len = len;
-        ret->alloc = len;
-        ret->seglist = malloc (ret->len * sizeof ret->seglist);
-    } else {
-        ret->len = 0;
-        ret->alloc = 0;
+    char *p = str;
+    while(*p) {
+        if (*buf_alloc <= (*idx + 1)) {
+            *buf_alloc += BUFSIZ;
+            buf = xrealloc(buf, *buf_alloc);
+        }
+        buf[*idx] = *p;
+        *idx += 1;
     }
-    return ret;
+    return buf;
 }
 
-void output_free(struct output *out, bool free_seglist)
+char *segment_to_str(struct input *in, size_t idx, struct segmentation *seg)
 {
-    if (out->len == 0) {
-        return;
-    } else if (free_seglist) {
-        int i;
-        for (i = 0; i < out->len; i++) {
-            seglist_free(out->seglist[i]);
+    char *buf = NULL;
+    size_t buf_alloc = 0;
+    size_t buf_i = 0;
+    size_t i;
+
+    segunit_t ph_i = 0;
+    for (i = 0; seg != NULL && i < seg->len; i++) {
+        while (ph_i < seg->bound[i]) {
+            segunit_t sym_i = in->u[i]->phon->seq[ph_i];
+            buf = append_str(buf, in->sigma[sym_i].str, &buf_i, &buf_alloc);
+            ph_i += 1;
         }
     }
-    free(out->seglist);
-    free(out);
-}
-
-void output_add(struct output *out, struct seglist *segs)
-{
-    out->len += 1;
-    if(out->alloc <= out->len) {
-        struct seglist  **tmp;
-        out->alloc += BUFSIZ;
-        tmp = realloc(out->seglist, out->alloc * (sizeof *tmp));
-        if(tmp)
-            out->seglist = tmp;
-        else
-            fprintf(stderr, "unable to allocate memory\n");
+    while (ph_i <= in->u[i]->phon->seq[0]) {
+        segunit_t sym_i = in->u[i]->phon->seq[ph_i];
+        buf = append_str(buf, in->sigma[sym_i].str, &buf_i, &buf_alloc);
+        ph_i += 1;
     }
-    out->seglist[out->len] = segs;
+    buf[buf_i] = '\0';
+    return xrealloc(buf, buf_i);
 }
 
-
-void output_write(char *outf, struct output *out, struct input *inp)
+void write_segs(char *outf, struct segmentation **segs, struct input *inp)
 {
     FILE *fp = NULL;
-    int i = 0, j = 0, k = 0;
+    size_t i = 0;
     if(!strcmp("-", outf)) {
         fp = stdout;
     } else {
@@ -406,23 +401,10 @@ void output_write(char *outf, struct output *out, struct input *inp)
         }
     }
 
-    for (i = 0; i < out->len; i++) {
-        for (j = 0; j < out->seglist[i]->nsegs; j++) {
-            segunit_t *seg = out->seglist[i]->segs[j];
-            segunit_t phon_i = 0;
-            for (k = 1; k <= seg[0]; k++) {
-                while (phon_i < seg[k]) {
-                    segunit_t sym_i = inp->u[i]->phon[phon_i];
-                    fprintf(fp, "%s", inp->sigma[sym_i].str);
-                    // TODO: (optionally) mark syllable boundaries 
-                    phon_i += 1;
-                }
-                fprintf(fp, "%s", SEG_DELIM);
-            }
-            if (j < out->seglist[i]->nsegs) {
-                fprintf(fp, "%s", SEGS_DELIM);
-            }
-        }
+    for (i = 0; i < inp->len; i++) {
+        char *s = segment_to_str(inp, i, segs[i]);
+        fputs(s, fp);
+        free(s);
     }
 
     if(fp != stdout) fclose(fp);

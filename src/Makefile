@@ -5,9 +5,9 @@ LIBS=`pkg-config --libs glib-2.0` \
 		-lgsl -lgslcblas -lm 
 SRCS=seg.c \
 	input.c \
-	seglist.c \
 	strutils.c \
-	seg_lm.c \
+	xalloc.c \
+	lm.c \
 	trie.c \
 #	 segparse.c phonstats.c score.c \
 #		prob_dist.c predictability.c options.c print.c \
