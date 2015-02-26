@@ -319,15 +319,16 @@ inc_freq(cg_lexicon *l, cg_lexi *lexi, size_t freq)
     lexi->freq += freq;
     l->stats->n_tok += freq;
     lexi->cat->freq += freq;
-    g_hash_table_lookup_extended(l->pfhash, lexi->pf, 
-                             (gpointer *)&key, (gpointer *)&val);
-    val->n_tok += freq;
+    if (g_hash_table_lookup_extended(l->pfhash, lexi->pf, 
+                             (gpointer *)&key, (gpointer *)&val)) {
+        val->n_tok += freq;
+    }
 
     lfkey = lexi->lf ? lexi->lf : ":";
-    g_hash_table_lookup_extended(l->pfhash, lfkey,
-                             (gpointer *)&key, (gpointer *)&val);
-    val->n_tok += freq;
-    
+    if (g_hash_table_lookup_extended(l->pfhash, lfkey,
+                             (gpointer *)&key, (gpointer *)&val)) {
+        val->n_tok += freq;
+    }
 }
 
 cg_lexi *
