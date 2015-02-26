@@ -44,8 +44,8 @@
 #include "lm.h"
 #include "xalloc.h"
 
-extern struct input *inp_dbg; // REMOVE ME
-
+extern struct input *inp_dbg;
+size_t idx_dbg; // REMOVE ME
 
 static void segment_lm_update(struct unitseq *u, struct segmentation *seg, 
         struct seg_lm_options *o);
@@ -61,12 +61,6 @@ static double wordscore(struct unitseq *u, size_t first, size_t last,
 
     if (score != 0.0) { // existing word
         score = log(o->alpha) + log(score);
-fprintf(stderr, "wscr(");
-for (i = first; i <= last; i++) {
-    fprintf(stderr, "%s", inp_dbg->sigma[u->seq[i]].str);
-}
-fprintf(stderr, "): ");
-fprintf(stderr, "old %f\n", score);
     } else {            // new word
         score = log(1 - o->alpha);
         for (i = first; i <= last; i++) {
@@ -96,7 +90,6 @@ struct seg_handle *segment_lm_init(struct input *in, float alpha,
     size_t i;
     for (i = 0; i < in->sigma_len + 1; i++) o->u_count[i] = 1;
 
-
     return h;
 }
 
@@ -111,6 +104,8 @@ segment_lm(struct seg_handle *h, size_t idx)
     size_t  best_start[len];
     struct segmentation *seg = malloc(sizeof *seg);
     struct seg_lm_options *opt = h->options;
+
+    idx_dbg = idx; // REMOVE ME
 
     for (j = 0; j < len; j++) {
         best_score[j] = 0.0;
@@ -176,7 +171,6 @@ static void segment_lm_update(struct unitseq *u, struct segmentation *seg,
             o->u_count[u->seq[j]] += 1;
         }
         o->nunits += last - first;
-//fprintf(stderr, "update1: nunits += %zu\n", last - first);
         first = last;
     }
     trie_insert(o->lex, u->seq + first, u->len - first);
@@ -184,7 +178,6 @@ static void segment_lm_update(struct unitseq *u, struct segmentation *seg,
         o->u_count[u->seq[j]] += 1;
     }
     o->nunits +=  u->len - first;
-//fprintf(stderr, "update2: nunits += %zu\n", u->len - first);
 }
 
 void segment_lm_cleanup(struct seg_handle *h)

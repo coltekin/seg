@@ -2,8 +2,10 @@
 #include <stdlib.h>
 #include "trie.h"
 #include "input.h"
+#include "xalloc.h"
 
 extern struct input *inp_dbg; // REMOVE ME
+size_t idx_dbg; // REMOVE ME
 
 struct trie *trie_init(size_t size)
 {
@@ -43,26 +45,21 @@ void trie_insert(struct trie *trie, segunit_t *seq, size_t len)
     size_t i;
 
     node->count += 1;
-//fprintf(stderr, "--- len %zu ... \n", len);
     for (i = 0; i < len; i++) {
         segunit_t edge = seq[i];
-//fprintf(stderr, "\tinserting %s(%hu) ... ", inp_dbg->sigma[edge].str, edge);
         if (node->children == NULL) {
-//fprintf(stderr, "first edge ... ");
-            node->children = calloc(trie->size, sizeof *node->children);
+            node->children = xcalloc(trie->size, sizeof *node->children);
         }
         if (node->children[edge] == NULL) {
-//fprintf(stderr, "new edge ... ");
-            node->children[edge] = calloc(1, sizeof *node->children[edge]);
+            node->children[edge] = xcalloc(1, sizeof *node->children[edge]);
         }
         node = node->children[edge];
         node->count += 1;
-//fprintf(stderr, "node count: %zu\n", node->count);
     }
-    if (node->count_final == 0)
+    if (node->count_final == 0) {
         trie->types += 1;
+    }
     node->count_final += 1;
-//fprintf(stderr, "\tnode final count: %zu\n", node->count_final);
 }
 
 struct trie_node *trie_lookup(struct trie *trie, segunit_t *seq, size_t len)
@@ -99,10 +96,11 @@ double trie_relfreq(struct trie *trie, segunit_t *seq, size_t len)
 {
     struct trie_node *n = trie_lookup(trie, seq, len);
 
-    if (n == NULL) 
+    if (n == NULL)  {
         return 0.0;
-    else 
+    } else  {
         return (double) n->count_final / (double) trie->root->count;
+    }
 }
 
 
