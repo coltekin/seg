@@ -7,7 +7,7 @@
 #include <glib.h>
 #include "seg.h"
 
-#define COMMENT_CHAR '#'
+#define COMMENT_CHAR ';'
 #define SEG_DELIM " "
 #define SEGS_DELIM " | "
 #define SYL_DELIM "."

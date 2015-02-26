@@ -89,6 +89,10 @@ struct input *input_read(const char *finput,
         if (buf_stress) free(buf_stress);
     } while (!feof(fp));
 
+    fclose(fp);
+    if (sfp != NULL) {
+        fclose(sfp);
+    }
     return ret;
 }
 
@@ -269,7 +273,7 @@ segunit_t sigma_add(struct input *inp, const char *p, uint8_t type)
     }
 
     /* beginning/end of sequence symbols are added only to the lexicon,
-     * not to the reverse lookup hashes 
+     * not to the reverse lookup tables 
      */
     if (inp->sigma_len == 0) {
         inp->sigma[1].str = strdup(SYM_BOS);
@@ -329,14 +333,22 @@ static void free_utterance(struct utterance *u)
 {
     if (u->phon) {
         free(u->phon->seq);
+        free(u->phon->feat);
         free(u->phon);
     }
     if (u->syl) {
         free(u->syl->seq);
+        free(u->syl->feat);
         free(u->syl);
     }
-    if (u->gs_seg) free(u->gs_seg);
-    if (u->syl_seg) free(u->syl_seg);
+    if (u->gs_seg) {
+        free(u->gs_seg->bound);
+        free(u->gs_seg);
+    }
+    if (u->syl_seg) {
+        free(u->syl_seg->bound);
+        free(u->syl_seg);
+    }
     free(u);
 }
 
@@ -346,10 +358,12 @@ void input_free(struct input *in)
     for (i = 0; i < in->len; i++) {
         free_utterance(in->u[i]);
     }
-    free_sigma(in->sigma, in->len);
+    free(in->u);
+    free_sigma(in->sigma, in->sigma_len);
     if (in->hash_phon) g_hash_table_destroy(in->hash_phon);
     if (in->hash_syl)g_hash_table_destroy(in->hash_syl);
     free(in->sigma_idx);
+    free(in);
 }
 
 
@@ -363,6 +377,7 @@ static char *append_str(char *buf, char *str, size_t *idx, size_t *buf_alloc)
         }
         buf[*idx] = *p;
         *idx += 1;
+        p += 1;
     }
     return buf;
 }
@@ -377,18 +392,18 @@ char *segment_to_str(struct input *in, size_t idx, struct segmentation *seg)
     segunit_t ph_i = 0;
     for (i = 0; seg != NULL && i < seg->len; i++) {
         while (ph_i < seg->bound[i]) {
-            segunit_t sym_i = in->u[i]->phon->seq[ph_i];
+            segunit_t sym_i = in->u[idx]->phon->seq[ph_i];
             buf = append_str(buf, in->sigma[sym_i].str, &buf_i, &buf_alloc);
             ph_i += 1;
         }
+        buf = append_str(buf, " ", &buf_i, &buf_alloc);
     }
-    while (ph_i <= in->u[i]->phon->seq[0]) {
-        segunit_t sym_i = in->u[i]->phon->seq[ph_i];
+    for (i = ph_i; i < in->u[idx]->phon->len; i++) {
+        segunit_t sym_i = in->u[idx]->phon->seq[i];
         buf = append_str(buf, in->sigma[sym_i].str, &buf_i, &buf_alloc);
-        ph_i += 1;
     }
     buf[buf_i] = '\0';
-    return xrealloc(buf, buf_i);
+    return xrealloc(buf, buf_i + 1);
 }
 
 void write_segs(char *outf, struct segmentation **segs, struct input *inp)
@@ -406,7 +421,7 @@ void write_segs(char *outf, struct segmentation **segs, struct input *inp)
 
     for (i = 0; i < inp->len; i++) {
         char *s = segment_to_str(inp, i, segs[i]);
-        fputs(s, fp);
+        fprintf(fp, "%s\n", s);
         free(s);
     }
 

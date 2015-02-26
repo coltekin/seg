@@ -38,6 +38,8 @@
 #include "cclib_debug.h"
 */
 
+struct input *inp_dbg; // REMOVE ME
+
 struct gengetopt_args_info opt;
 
 void process_input(struct input *in);
@@ -71,6 +73,7 @@ int main(int argc, char **argv)
     inp = input_read(opt.input_arg, 
             opt.stress_file_given ? opt.stress_file_arg : NULL,
             iflags);
+    inp_dbg = inp; // REMOVE
     if (opt.shuffle_given) {
        input_shuffle(inp, opt.shuffle_arg); 
     }
@@ -175,6 +178,7 @@ void process_input(struct input *in)
                 fprintf(stderr,"%*zu/%zu\r", 6, i, in->len);
             }
         }
+    }
 
 /*
         if (opt.print_prf_arg && ((i+1) % opt.print_prf_arg) == 0){
@@ -194,11 +198,11 @@ void process_input(struct input *in)
             print_prf(in, out, prf_off, opt.print_header_flag);
         }
 */
-    }
 
     seg_cleanup_func(seg_h);
 
     write_segs(opt.output_arg, out, in);
+
     for (i = 0; i < in->len; i++) {
         free(out[i]);
     }

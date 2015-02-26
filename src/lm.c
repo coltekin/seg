@@ -42,23 +42,34 @@
 #include "input.h"
 #include "seg.h"
 #include "lm.h"
+#include "xalloc.h"
+
+extern struct input *inp_dbg; // REMOVE ME
+
 
 static void segment_lm_update(struct unitseq *u, struct segmentation *seg, 
         struct seg_lm_options *o);
 
-static double wordscore(struct unitseq *u, int first, int last, 
+static double wordscore(struct unitseq *u, size_t first, size_t last, 
         struct seg_lm_options *o)
 {
     double  score;
+    size_t i;
 
-    score = trie_relfreq(o->lex, u->seq + first, last - first);
+
+    score = trie_relfreq(o->lex, u->seq + first, last - first + 1);
 
     if (score != 0.0) { // existing word
         score = log(o->alpha) + log(score);
+fprintf(stderr, "wscr(");
+for (i = first; i <= last; i++) {
+    fprintf(stderr, "%s", inp_dbg->sigma[u->seq[i]].str);
+}
+fprintf(stderr, "): ");
+fprintf(stderr, "old %f\n", score);
     } else {            // new word
-        size_t i;
         score = log(1 - o->alpha);
-        for (i = first; i < last; i++) {
+        for (i = first; i <= last; i++) {
             score += log ((double) (o->u_count[u->seq[i]] + 1) /
                           (double) (o->nunits + 1));
         }
@@ -71,8 +82,7 @@ struct seg_handle *segment_lm_init(struct input *in, float alpha,
 {
     struct seg_handle *h = malloc(sizeof *h);
     struct seg_lm_options *o = malloc(sizeof *o);
-    struct trie *t = (unit == SEG_PHON) ? trie_init(in->sigma_nph) :
-        trie_init(in->sigma_nsyl);
+    struct trie *t = trie_init(in->sigma_len + 1);
 
     h->method = SEG_LM;
     h->in = in;
@@ -80,8 +90,12 @@ struct seg_handle *segment_lm_init(struct input *in, float alpha,
     h->options = o;
     o->alpha = alpha;
     o->lex = t;
-    o->nunits = 0;
-    o->u_count = calloc(in->sigma_len, sizeof *o->u_count);
+    o->nunits = in->sigma_len - 2;
+//    o->u_count = xcalloc(in->sigma_len + 1, sizeof *o->u_count);
+    o->u_count = xmalloc((in->sigma_len + 1) * sizeof *o->u_count);
+    size_t i;
+    for (i = 0; i < in->sigma_len + 1; i++) o->u_count[i] = 1;
+
 
     return h;
 }
@@ -93,27 +107,27 @@ segment_lm(struct seg_handle *h, size_t idx)
     struct unitseq *seq = (h->unit == SEG_PHON) ?  u->phon : u->syl;
     int len =(h->unit == SEG_PHON) ? u->phon->len : u->syl->len;
     int j, firstch, lastch;
-    double  bestsc[len];
-    int  bestst[len];
+    double  best_score[len];
+    size_t  best_start[len];
     struct segmentation *seg = malloc(sizeof *seg);
     struct seg_lm_options *opt = h->options;
 
     for (j = 0; j < len; j++) {
-        bestsc[j] = 0.0;
-        bestst[j] = 0;
+        best_score[j] = 0.0;
+        best_start[j] = 0;
     }
 
     // these loops are almost verbatim copies from Brent's (1999) 
     // search algorithm.
     // first: calculate best word ending in each possible end point.
-    for (lastch = 0; lastch <= len; lastch++){
-        bestsc[lastch] = wordscore(seq, 0, lastch, opt);
-        bestst[lastch] = 0;
+    for (lastch = 0; lastch < len; lastch++){
+        best_score[lastch] = wordscore(seq, 0, lastch, opt);
+        best_start[lastch] = 0;
         for (firstch = 1; firstch <= lastch; firstch++) {
             double wordsc = wordscore(seq, firstch, lastch, opt);
-            if (wordsc + bestsc[firstch - 1] > bestsc[lastch]) {
-                bestsc[lastch] = wordsc + bestsc[firstch - 1] ;
-                bestst[lastch] = firstch;
+            if (wordsc + best_score[firstch - 1] > best_score[lastch]) {
+                best_score[lastch] = wordsc + best_score[firstch - 1] ;
+                best_start[lastch] = firstch;
             }
         }
     }
@@ -121,23 +135,23 @@ segment_lm(struct seg_handle *h, size_t idx)
     // second: insert boundaries starting from the back.
     //
     // first pass: get the number of segments
-    firstch = bestst[len];
+    firstch = best_start[len - 1];
     seg->len = 0;
     while (firstch > 0) {
         seg->len += 1;
-        firstch = bestst[firstch - 1];
+        firstch = best_start[firstch - 1];
     }
 
 
     if (seg->len) {
         seg->bound = malloc(seg->len * sizeof *seg->bound);
-        lastch = len;
-        firstch = bestst[lastch];
+        lastch = len - 1;
+        firstch = best_start[lastch];
         j = seg->len;
         for (j = seg->len - 1; j >= 0; j--) {
             seg->bound[j] = firstch;
             lastch = firstch - 1;
-            firstch = bestst[lastch];
+            firstch = best_start[lastch];
         }
     } else {
         free(seg);
@@ -162,12 +176,15 @@ static void segment_lm_update(struct unitseq *u, struct segmentation *seg,
             o->u_count[u->seq[j]] += 1;
         }
         o->nunits += last - first;
+//fprintf(stderr, "update1: nunits += %zu\n", last - first);
         first = last;
     }
     trie_insert(o->lex, u->seq + first, u->len - first);
     for (j = first; j < u->len; j++) {
         o->u_count[u->seq[j]] += 1;
     }
+    o->nunits +=  u->len - first;
+//fprintf(stderr, "update2: nunits += %zu\n", u->len - first);
 }
 
 void segment_lm_cleanup(struct seg_handle *h)
