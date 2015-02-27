@@ -26,9 +26,6 @@
 #include "trie.h"
 
 
-static GHashTable  *lex_in;
-static GHashTable  *lex_out;
-
 /* get_tp_fn_fa()
  *
  * walk through two (int) segmentation lists, and return 
@@ -41,11 +38,11 @@ static GHashTable  *lex_out;
 void get_tp_fn_fp(struct seg_counts *c, 
              struct segmentation *gs, struct segmentation *res)
 {
-    int ngs = (gs != NULL) ? gs->len : 0, 
+    size_t ngs = (gs != NULL) ? gs->len : 0, 
         nres = (res != NULL) ? res->len : 0;
-    int igs = ngs,
-        ires = nres;
-    int prev_p = 1;
+    int igs = ngs - 1,
+           ires = nres - 1;
+    size_t prev_p = 1;
     unsigned wtp = 0;
 
     if (ngs == 0 && nres == 0) {
@@ -53,15 +50,15 @@ void get_tp_fn_fp(struct seg_counts *c,
         prev_p = 0;
     }
 
-    while (igs != 0 || ires != 0) {
-        if (igs == 0) { // we have additional stuff
+    while (igs >= 0 || ires >= 0) {
+        if (igs < 0) { // we have additional stuff
             c->bfp += 1;
             prev_p = 0;
-            res -= 1;
-        } else if (ires == 0) { // we missed some stuff
+            ires -= 1;
+        } else if (ires < 0) { // we missed some stuff
             c->bfn += 1;
             prev_p = 0;
-            gs -= 1;
+            igs -= 1;
         } else {
             if(gs->bound[igs] == res->bound[ires]) {
                 c->btp += 1;
@@ -126,9 +123,11 @@ void print_prf(struct input *in, struct segmentation **out,
         struct segmentation *gs_seg = in->u[i]->gs_seg;
         struct unitseq *seq = in->u[i]->phon; // TODO: syllable segmentation
         size_t len = seq->len; 
+        size_t nsegs = (gs_seg != NULL) ? gs_seg->len : 0;
 
-        bcount +=  (gs_seg != NULL) ? gs_seg->len : 0;
-        nbcount += len - 1 -  (gs_seg != NULL) ? gs_seg->len : 0;
+        bcount += nsegs;
+        nbcount += len - 1 - nsegs;
+//fprintf(stderr, "len: %zu, gs_seglen: %d, b/nb: %zu/%zu\n", len, (gs_seg != NULL) ? gs_seg->len : 0, bcount, nbcount);
         
         get_tp_fn_fp(&c, gs_seg, seg);
 
@@ -156,7 +155,7 @@ void print_prf(struct input *in, struct segmentation **out,
         if (node_m->count_final == 0) // not a full word, skip
             continue;
         node_gs = trie_lookup(gs_lex, tmp, tmplen);
-        if (node_gs == NULL && node_gs->count_final != 0) {
+        if (node_gs != NULL && node_gs->count_final != 0) {
             c.ltp += 1;
         } else {
             c.lfp += 1;
@@ -166,20 +165,6 @@ void print_prf(struct input *in, struct segmentation **out,
 
     c.lfn = gs_lex->types - c.ltp;
 
-/*
-    GHashTableIter iter;
-    g_hash_table_iter_init (&iter, lex_out);
-    gpointer key, val;
-    while (g_hash_table_iter_next (&iter, &key, &val)) {
-        if(g_hash_table_lookup(lex_in, key)) {
-            ++c.ltp;
-        } else {
-            ++c.lfp;
-        }
-    }
-    c.lfn = g_hash_table_size (lex_in) - c.ltp;
-*/
-
     sc.lp = (double)c.ltp / (double)(c.ltp + c.lfp);
     sc.lr = (double)c.ltp / (double)(c.ltp + c.lfn);
 
@@ -188,19 +173,21 @@ void print_prf(struct input *in, struct segmentation **out,
 
     memcpy(&sc.c, &c, sizeof c);
 
-    g_hash_table_destroy(lex_in);
-    g_hash_table_destroy(lex_out);
-
     char *sep = (options & SCORE_OPT_LATEX) ? "& " : ",";
     char *eol = (options & SCORE_OPT_LATEX) ? "\\\\\\hline" : "";
     if (options & SCORE_OPT_HEADER)  {
-        printf("start%1$send%1$s btp%1$sbfp%1$sbfn%1$swtp%1$swfp%1$swfn%1$sltp%1$slfp%1$slfn%1$s ", sep);
-        printf("bp%1$sbr%1$sbf%1$swp%1$swr%1$swf%1$slp%1$slr%1$slf%1$s eo%1$seu%2$s\n", sep, eol);
+        printf("start%1$send%1$s "
+               "btp%1$sbfp%1$sbfn%1$s"
+               "wtp%1$swfp%1$swfn%1$s"
+               "ltp%1$slfp%1$slfn%1$s ", sep);
+        printf("bp%1$sbr%1$sbf%1$s"
+               "wp%1$swr%1$swf%1$s"
+               "lp%1$slr%1$slf%1$s eo%1$seu%2$s\n", sep, eol);
     }
     printf("%2$zu%1$s%3$zu%1$s "
-           "%4$u%1$s%5$u%1$s%6$u%1$s"
-           "%7$u%1$s%8$u%1$s%9$u%1$s"
-           "%10$u%1$s%11$u%1$s%12$u%1$s ", 
+           "%4$zu%1$s%5$zu%1$s%6$zu%1$s"
+           "%7$zu%1$s%8$zu%1$s%9$zu%1$s"
+           "%10$zu%1$s%11$zu%1$s%12$zu%1$s ", 
             sep, range_start, range_end,
             sc.c.btp, sc.c.bfp, sc.c.bfn,
             sc.c.wtp, sc.c.wfp, sc.c.wfn,
@@ -215,4 +202,7 @@ void print_prf(struct input *in, struct segmentation **out,
             sc.lp, sc.lr, f_score(sc.lp,sc.lr),
             sc.eo, sc.eu,
             eol);
+
+    trie_free(gs_lex);
+    trie_free(model_lex);
 }

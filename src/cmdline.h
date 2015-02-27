@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "d010d6c"
+#define CMDLINE_PARSER_VERSION "02bbe77"
 #endif
 
 enum enum_print_ptp { print_ptp__NULL = -1, print_ptp_arg_jp = 0, print_ptp_arg_tp, print_ptp_arg_mi, print_ptp_arg_sv, print_ptp_arg_h, print_ptp_arg_rtp, print_ptp_arg_rsv, print_ptp_arg_rh, print_ptp_arg_none };

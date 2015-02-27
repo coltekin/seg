@@ -26,9 +26,9 @@
 #include "seg.h"
 
 struct seg_counts {
-    unsigned  btp, bfp, bfn,
-              wtp, wfp, wfn,
-              ltp, lfp, lfn;
+    size_t  btp, bfp, bfn,
+            wtp, wfp, wfn,
+            ltp, lfp, lfn;
 };
 
 struct seg_score {
