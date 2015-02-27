@@ -58,7 +58,7 @@ void *stack_pop(struct stack *st)
     return data;
 }
 
-void stack_free(struct stack *st, int free_data)
+void stack_free(struct stack *st, bool free_data)
 {
     void *data = stack_pop(st);
 
@@ -70,3 +70,9 @@ void stack_free(struct stack *st, int free_data)
     }
     free(st);
 }
+
+bool stack_is_empty(struct stack *st)
+{
+    return (st->next == NULL);
+}
+

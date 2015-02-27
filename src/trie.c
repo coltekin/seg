@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "trie.h"
 #include "input.h"
 #include "xalloc.h"
@@ -13,6 +14,7 @@ struct trie *trie_init(size_t size)
 
     t->size = size;
     t->types = 0;
+    t->max_depth = 0;
     t->root = malloc(sizeof *t->root);
     t->root->children = NULL;
     t->root->count = 0;
@@ -60,6 +62,8 @@ void trie_insert(struct trie *trie, segunit_t *seq, size_t len)
         trie->types += 1;
     }
     node->count_final += 1;
+
+    if (len > trie->max_depth) trie->max_depth = len;
 }
 
 struct trie_node *trie_lookup(struct trie *trie, segunit_t *seq, size_t len)
@@ -103,69 +107,64 @@ double trie_relfreq(struct trie *trie, segunit_t *seq, size_t len)
     }
 }
 
+struct trie_iter_data {
+    struct trie_node *node;
+    size_t depth;
+    segunit_t label;
+};
 
-#ifdef TRIE_TEST
-
-segunit_t seq[10][6] = {{1, 2, 3, 4, 0},    // 0
-                        {2, 3, 4, 5, 0},    // 1
-                        {2, 1, 4, 0},       // 2
-                        {1, 2, 1, 0},       // 3
-                        {0},                // 4
-                        {1, 2, 0},          // 5
-                        {2, 1, 0},          // 6
-                        {2, 2, 0},          // 7
-                        {2, 0},             // 8
-                        {3, 0}              // 9
-                   };
-
-int main()
+struct trie_iter *trie_iter_init(struct trie *t)
 {
-    struct trie *t = trie_init(10);
-    struct trie_node *tn;
-
-    trie_insert(t, seq[0]);
-    trie_insert(t, seq[0]);
-    trie_insert(t, seq[1]);
-    trie_insert(t, seq[2]);
-    trie_insert(t, seq[3]);
-    trie_insert(t, seq[4]);
-    trie_insert(t, seq[4]);
-
-    tn = trie_lookup(t, seq[0]);
-    if (tn != NULL) {
-        printf("0: %zu/%zu\n", tn->count_final, tn->count);
-    }
-    tn = trie_lookup(t, seq[3]);
-    if (tn != NULL) {
-        printf("3: %zu/%zu\n", tn->count_final, tn->count);
-    }
-    tn = trie_lookup(t, seq[4]);
-    if (tn != NULL) {
-        printf("4: %zu/%zu\n", tn->count_final, tn->count);
-    }
-    tn = trie_lookup(t, seq[5]);
-    if (tn != NULL) {
-        printf("5: %zu/%zu\n", tn->count_final, tn->count);
-    }
-    tn = trie_lookup(t, seq[6]);
-    if (tn != NULL) {
-        printf("6: %zu/%zu\n", tn->count_final, tn->count);
-    }
-    tn = trie_lookup(t, seq[7]);
-    if (tn != NULL) {
-        printf("7: %zu/%zu\n", tn->count_final, tn->count);
-    }
-    tn = trie_lookup(t, seq[8]);
-    if (tn != NULL) {
-        printf("8: %zu/%zu\n", tn->count_final, tn->count);
-    }
-    tn = trie_lookup(t, seq[9]);
-    if (tn != NULL) {
-        printf("9: %zu/%zu\n", tn->count_final, tn->count);
-    }
-
-    trie_free(t);
-    return 0;
+    struct trie_iter *ti = xmalloc(sizeof *ti);
+    struct trie_iter_data *d = xmalloc(sizeof *d);
+    d->node = t->root;
+    d->depth = 0;
+    d->label = 0;
+    ti->trie = t;
+    ti->seq = xmalloc(t->max_depth * sizeof *ti->seq);
+    ti->stack = stack_init();
+    stack_push(ti->stack, d);
+    return ti;
 }
 
-#endif // ifdef TRIE_TEST
+void trie_iter_free(struct trie_iter *ti)
+{
+    stack_free(ti->stack, true);
+    free(ti->seq);
+    free(ti);
+}
+
+
+struct trie_node *trie_iter_next(struct trie_iter *ti, segunit_t **seq, size_t *len)
+{
+    struct trie_iter_data *d;
+    struct trie_node *node;
+    size_t i;
+
+    if (stack_is_empty(ti->stack)) {
+        len = 0;
+        *seq = NULL;
+        return NULL;
+    }
+
+    d = stack_pop(ti->stack);
+    node = d->node;
+    for (i = 0; node->children != NULL && i < ti->trie->size; i++) {
+        if (node->children[i] != NULL) {
+            struct trie_iter_data *child = malloc(sizeof *d);
+            child->node = node->children[i];
+            child->depth = d->depth + 1;
+            child->label = i;
+            stack_push(ti->stack, child);
+        }
+    }
+
+    if (d->depth > 0) {
+        ti->seq[d->depth - 1] = d->label;
+    }
+    *len = d->depth;
+    *seq = ti->seq;
+    free(d);
+    return node;
+}
+

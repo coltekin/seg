@@ -21,15 +21,39 @@
 #ifndef _STACK_H
 #define _STACK_H       1
 
+#include <stdbool.h>
+
 struct stack {
     void *data;
     struct stack *next;
 };
 
+/**
+ * stack_init() - initialze a stack structure
+ *
+ * Stack is implemented as a linked list with dummy head node, which
+ * is allocated and returnd by stack_init();
+ */
 struct stack    *stack_init();
-void            stack_push(struct stack *st, void *data);
-void            *stack_pop(struct stack *st);
-void            stack_free(struct stack *st, int free_data);
 
+/**
+ * stack_push() - push a pointer to the stack
+ */
+void            stack_push(struct stack *st, void *data);
+
+/**
+ * stack_push() - return and remove the pointer on top of the stack
+ */
+void            *stack_pop(struct stack *st);
+
+/**
+ * stack_push() - deallocate all memory used by the stack
+ * @st:           the stack to destroy
+ * @free_data:    instruct stack_free() to also remove the data in the
+ *                already existing items, if any.
+ */
+void            stack_free(struct stack *st, bool free_data);
+
+bool stack_is_empty(struct stack *st);
 
 #endif /* _STACK_H */

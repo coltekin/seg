@@ -27,12 +27,12 @@
 #include "cmdline.h"
 #include "input.h"
 #include "lm.h"
+#include "score.h"
 /*
 #include "seg_nv.h"
 #include "seg_random.h"
 #include "seg_lexicon.h"
 #include "seg_lexc.h"
-#include "score.h"
 #include "predictability.h"
 #include "print.h"
 #include "cclib_debug.h"
@@ -122,10 +122,17 @@ void process_input(struct input *in)
     struct segmentation **out = malloc(in->len * sizeof *out);
     size_t i;
     struct seg_handle *seg_h;
-/*
     size_t prf_off = 0;
     size_t prf_incr = 0;
-*/
+    uint8_t print_prf_opts = 0;
+
+    if (opt.print_header_flag)
+        print_prf_opts |= SCORE_OPT_HEADER;
+    if (opt.print_latex_flag) 
+        print_prf_opts |= SCORE_OPT_LATEX;
+    if (opt.score_edges_flag) 
+        print_prf_opts |= SCORE_EDGES;
+
 
     switch (opt.method_arg) {
         case method_arg_lm:
@@ -165,27 +172,29 @@ void process_input(struct input *in)
         break;
     }
 
-/*
+
     if (opt.print_prf_arg < 0) {
         prf_incr = -opt.print_prf_arg;
     }
-*/
 
     for (i = 0; i < in->len; i++) {
+
         out[i] = seg_func(seg_h, i);
+
+        /* print the progress if requested */
         if (opt.progress_given) {
             if((i %  opt.progress_arg) == 0) {
                 fprintf(stderr,"%*zu/%zu\r", 6, i, in->len);
             }
         }
-    }
 
-/*
+        /* print the evaluation measures, if requested */
         if (opt.print_prf_arg && ((i+1) % opt.print_prf_arg) == 0){
             if (i < opt.print_prf_arg) {
-                print_prf(in, out, prf_off, opt.print_header_flag);
+                print_prf(in, out, prf_off, i, print_prf_opts);
             } else {
-                print_prf(in, out, prf_off, 0);
+                print_prf(in, out, prf_off, i,
+                    print_prf_opts & ~SCORE_OPT_HEADER);
             }
             prf_off += prf_incr;
         }
@@ -193,11 +202,12 @@ void process_input(struct input *in)
 
     if (opt.print_prf_given) {
         if (opt.print_prf_arg) {
-            print_prf(in, out, prf_off, 0);
+            print_prf(in, out, prf_off, in->len, 
+                    print_prf_opts & ~SCORE_OPT_HEADER);
         } else {
-            print_prf(in, out, prf_off, opt.print_header_flag);
+            print_prf(in, out, prf_off, in->len, print_prf_opts);
         }
-*/
+    }
 
     seg_cleanup_func(seg_h);
 

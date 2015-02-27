@@ -9,7 +9,9 @@ SRCS=seg.c \
 	xalloc.c \
 	lm.c \
 	trie.c \
-#	 segparse.c phonstats.c score.c \
+	score.c \
+	stack.c \
+#	 segparse.c phonstats.c 
 #		prob_dist.c predictability.c options.c print.c \
 #		pub.c \
 #		mdata.c \
@@ -34,9 +36,12 @@ SRCS=seg.c \
 #		packed_chart.c \
 #		cyk.c \
 #		cyk_packed.c \
-#		stack.c \
+#		
 
 OBJECTS=$(SRCS:.c=.o) cmdline.o
+
+#trietest: trie_test.o trie.o xalloc.o stack.o
+#	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 
 seg: $(OBJECTS)
