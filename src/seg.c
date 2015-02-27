@@ -204,7 +204,10 @@ void process_input(struct input *in)
     write_segs(opt.output_arg, out, in);
 
     for (i = 0; i < in->len; i++) {
-        free(out[i]);
+        if (out[i] != NULL) {
+            if (out[i]->bound != NULL) free(out[i]->bound);
+            free(out[i]);
+        }
     }
     free(out);
 

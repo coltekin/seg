@@ -102,7 +102,8 @@ segment_lm(struct seg_handle *h, size_t idx)
     int j, firstch, lastch;
     double  best_score[len];
     size_t  best_start[len];
-    struct segmentation *seg = malloc(sizeof *seg);
+    struct segmentation *seg = NULL;
+    size_t nsegs;
     struct seg_lm_options *opt = h->options;
 
     idx_dbg = idx; // REMOVE ME
@@ -131,14 +132,16 @@ segment_lm(struct seg_handle *h, size_t idx)
     //
     // first pass: get the number of segments
     firstch = best_start[len - 1];
-    seg->len = 0;
+    nsegs = 0;
     while (firstch > 0) {
-        seg->len += 1;
+        nsegs += 1;
         firstch = best_start[firstch - 1];
     }
 
 
-    if (seg->len) {
+    if (nsegs != 0 ) {
+        seg = malloc(sizeof *seg);
+        seg->len = nsegs;
         seg->bound = malloc(seg->len * sizeof *seg->bound);
         lastch = len - 1;
         firstch = best_start[lastch];
@@ -148,9 +151,6 @@ segment_lm(struct seg_handle *h, size_t idx)
             lastch = firstch - 1;
             firstch = best_start[lastch];
         }
-    } else {
-        free(seg);
-        seg = NULL;
     }
 
     segment_lm_update(seq, seg, opt);
