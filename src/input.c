@@ -150,7 +150,7 @@ struct utterance *tokenize(struct input *inp,
     char syl_tmp[maxlen];
     syl_tmp[0] = '\0';
     while(*p) {
-        char sym[5];
+        char sym[16]; // should be enough for three utf8 characters
         unsigned char first_byte = p[0];
         if((first_byte >> 7) == 0x00) { // 1 byte
             sym[0] = p[0]; sym[1] = '\0';
@@ -182,13 +182,28 @@ struct utterance *tokenize(struct input *inp,
             u->syl_seg->bound[u->syl_seg->len] = u->phon->len;
             u->syl_seg->len += 1;
             syl_boundary = true;
-        } else if (!strcmp("ˈ", sym)) { // primary stress
+        } else if (!strcmp("ˈ", sym) || *sym == '\'') { // primary stress
             stress = SEGFEAT_STRESS1;
-        } else if (!strcmp("ˌ", sym)) { // secondary stress
+        } else if (!strcmp("ˌ", sym) || *sym == ',') { // secondary stress
             stress = SEGFEAT_STRESS2;
         // TODO: diacratic processing goes in here.
         } else {
             // TODO: deal with pseudo-syllabification here.
+ 
+            /* we peek forward to see if there is a modifier 
+             * for the current IPA symbol 
+             * */
+            if (inp->mode & INPMODE_IPA) {
+                if (*p == ':') {
+                    p += 1;
+                } else if (!strncmp("ː", p, strlen("ː"))) {
+                    strcat(sym, "ː");
+                    p += strlen("ː");
+                } else if (!strncmp(p, "ˑ", strlen("ˑ"))) {
+                    strcat(sym, "ˑ");
+                    p += strlen("ˑ");
+                }
+            }
 
             u->phon->seq[u->phon->len] = sigma_add_phon(inp, sym);
             u->phon->feat[u->phon->len] |= stress;
