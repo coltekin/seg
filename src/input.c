@@ -137,6 +137,49 @@ struct utterance *utterance_new(uint8_t mode, size_t maxlen)
     return u;
 }
 
+uint32_t utf8_to_utf_code_point(char *s)
+{
+    unsigned char c1 = s[0];
+    if((c1 >> 7) == 0x00) {
+        return  s[0];
+    } else {
+        unsigned char c2 = s[1];
+        if ((c1 >> 5) == 0x06) {
+            return (c1-192)*64+c2-128;
+        } else {
+            unsigned char c3 = s[2];
+            if ((c1 >> 4) == 0x03) {
+                return  (c1 - 224) * 4096 + (c2 - 128) * 64 + c3 - 128;
+            } else {
+                unsigned char c4 = s[3];
+                return (c1 - 240) * 262144 + (c2 - 128) * 4096 
+                        + (c3 - 128) * 64 + c4 - 128;
+            }
+        }
+    }
+}
+
+size_t next_utf8_symbol(const char *s, char *sym)
+{
+    unsigned char c1 = s[0];
+    if((c1 >> 7) == 0x00) { // 1 byte
+        sym[0] = s[0]; sym[1] = '\0';
+        return 1;
+    } else if((c1 >> 5) == 0x06) { // 2 bytes
+        strncpy(sym, s, 2); sym[2] = '\0';
+        return 2;
+    } else if((c1 >> 4) == 0x0e) { // 3 bytes
+        strncpy(sym, s, 3); sym[3] = '\0';
+        return 3;
+    }  else if((c1 >> 3) == 0x1e) { // 4 bytes
+        strncpy(sym, s, 4); sym[4] = '\0';
+        return 4;
+    } else {// something is wrong, 
+        strcpy(sym,"�"); // U+FFFD Replacement character
+        return 1; // try to recover from the next character
+    }
+}
+
 struct utterance *tokenize(struct input *inp, 
         const char *str_phon, 
         const char *str_stress) 
@@ -151,23 +194,7 @@ struct utterance *tokenize(struct input *inp,
     syl_tmp[0] = '\0';
     while(*p) {
         char sym[16]; // should be enough for three utf8 characters
-        unsigned char first_byte = p[0];
-        if((first_byte >> 7) == 0x00) { // 1 byte
-            sym[0] = p[0]; sym[1] = '\0';
-            p += 1;
-        } else if((first_byte >> 5) == 0x06) { // 2 bytes
-            strncpy(sym, p, 2); sym[2] = '\0';
-            p += 2;
-        } else if((first_byte >> 4) == 0x0e) { // 3 bytes
-            strncpy(sym, p, 3); sym[3] = '\0';
-            p += 3;
-        }  else if((first_byte >> 3) == 0x1e) { // 4 bytes
-            strncpy(sym, p, 4); sym[4] = '\0';
-            p += 4;
-        } else {// something is wrong, 
-            strcpy(sym,"�"); // U+FFFD Replacement character
-            p += 1; // try to recover from the next character
-        }
+        p += next_utf8_symbol(p, sym);
 
         if (*sym == ' ' || *sym == '\t') { // boundary 
             u->gs_seg->bound[u->gs_seg->len] = u->phon->len;
@@ -189,7 +216,9 @@ struct utterance *tokenize(struct input *inp,
         // TODO: diacratic processing goes in here.
         } else {
             // TODO: deal with pseudo-syllabification here.
- 
+
+            // TODO: change the following to use unicode character class range
+            //       of IPA diacritics
             /* we peek forward to see if there is a modifier 
              * for the current IPA symbol 
              * */
