@@ -31,7 +31,7 @@ option "ipa" - "The input contains UTF-8 encoded IPA symbols" flag off
 option "syl" - "The input contains syllable boundary markers"
         string typestr="delimeter" default="." optional argoptional
 
-option "stress-file" - " filename to read stress patterns from" 
+option "stress" - "filename to read stress patterns from" 
         string typestr="filename" optional
 
 option "debug" d "debug level" 
@@ -165,10 +165,6 @@ option "lex" - "measure(s) to use for lexicon based segmentation"
 option "lex-dir" - "direction of lexal measures"
        enum values="lr","rl","both"
        default="both" optional
-
-section "Options for stress"
-option "stress" - "method to calculate stress information"
-        enum values="ub","transition","cheat","sylcheat" default="ub" optional
 
 section "Options for utterance boundary segmentation"
 option "ub-nglen" - "phoneme ngram length" 

@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "02bbe77"
+#define CMDLINE_PARSER_VERSION "579ef73"
 #endif
 
 enum enum_print_ptp { print_ptp__NULL = -1, print_ptp_arg_jp = 0, print_ptp_arg_tp, print_ptp_arg_mi, print_ptp_arg_sv, print_ptp_arg_h, print_ptp_arg_rtp, print_ptp_arg_rsv, print_ptp_arg_rh, print_ptp_arg_none };
@@ -42,7 +42,6 @@ enum enum_lex_wcombine { lex_wcombine__NULL = -1, lex_wcombine_arg_best = 0, lex
 enum enum_lex_norm { lex_norm__NULL = -1, lex_norm_arg_none = 0, lex_norm_arg_z };
 enum enum_lex { lex__NULL = -1, lex_arg_lc = 0, lex_arg_lf, lex_arg_lp };
 enum enum_lex_dir { lex_dir__NULL = -1, lex_dir_arg_lr = 0, lex_dir_arg_rl, lex_dir_arg_both };
-enum enum_stress { stress__NULL = -1, stress_arg_ub = 0, stress_arg_transition, stress_arg_cheat, stress_arg_sylcheat };
 enum enum_ub_type { ub_type__NULL = -1, ub_type_arg_ubegin = 0, ub_type_arg_uend, ub_type_arg_both };
 enum enum_method { method__NULL = -1, method_arg_lexicon = 0, method_arg_lm, method_arg_random, method_arg_lexc, method_arg_nv, method_arg_combine };
 enum enum_cues { cues__NULL = -1, cues_arg_pred = 0, cues_arg_phon, cues_arg_stress, cues_arg_lex };
@@ -70,9 +69,9 @@ struct gengetopt_args_info
   char * syl_arg;	/**< @brief The input contains syllable boundary markers (default='.').  */
   char * syl_orig;	/**< @brief The input contains syllable boundary markers original value given at command line.  */
   const char *syl_help; /**< @brief The input contains syllable boundary markers help description.  */
-  char * stress_file_arg;	/**< @brief  filename to read stress patterns from.  */
-  char * stress_file_orig;	/**< @brief  filename to read stress patterns from original value given at command line.  */
-  const char *stress_file_help; /**< @brief  filename to read stress patterns from help description.  */
+  char * stress_arg;	/**< @brief filename to read stress patterns from.  */
+  char * stress_orig;	/**< @brief filename to read stress patterns from original value given at command line.  */
+  const char *stress_help; /**< @brief filename to read stress patterns from help description.  */
   int debug_arg;	/**< @brief debug level (default='0').  */
   char * debug_orig;	/**< @brief debug level original value given at command line.  */
   const char *debug_help; /**< @brief debug level help description.  */
@@ -207,9 +206,6 @@ struct gengetopt_args_info
   enum enum_lex_dir lex_dir_arg;	/**< @brief direction of lexal measures (default='both').  */
   char * lex_dir_orig;	/**< @brief direction of lexal measures original value given at command line.  */
   const char *lex_dir_help; /**< @brief direction of lexal measures help description.  */
-  enum enum_stress stress_arg;	/**< @brief method to calculate stress information (default='ub').  */
-  char * stress_orig;	/**< @brief method to calculate stress information original value given at command line.  */
-  const char *stress_help; /**< @brief method to calculate stress information help description.  */
   int ub_nglen_arg;	/**< @brief phoneme ngram length (default='2').  */
   char * ub_nglen_orig;	/**< @brief phoneme ngram length original value given at command line.  */
   const char *ub_nglen_help; /**< @brief phoneme ngram length help description.  */
@@ -295,7 +291,7 @@ struct gengetopt_args_info
   unsigned int input_given ;	/**< @brief Whether input was given.  */
   unsigned int ipa_given ;	/**< @brief Whether ipa was given.  */
   unsigned int syl_given ;	/**< @brief Whether syl was given.  */
-  unsigned int stress_file_given ;	/**< @brief Whether stress-file was given.  */
+  unsigned int stress_given ;	/**< @brief Whether stress was given.  */
   unsigned int debug_given ;	/**< @brief Whether debug was given.  */
   unsigned int quiet_given ;	/**< @brief Whether quiet was given.  */
   unsigned int progress_given ;	/**< @brief Whether progress was given.  */
@@ -341,7 +337,6 @@ struct gengetopt_args_info
   unsigned int lex_norm_given ;	/**< @brief Whether lex-norm was given.  */
   unsigned int lex_given ;	/**< @brief Whether lex was given.  */
   unsigned int lex_dir_given ;	/**< @brief Whether lex-dir was given.  */
-  unsigned int stress_given ;	/**< @brief Whether stress was given.  */
   unsigned int ub_nglen_given ;	/**< @brief Whether ub-nglen was given.  */
   unsigned int ub_ngmin_given ;	/**< @brief Whether ub-ngmin was given.  */
   unsigned int ub_ngmax_given ;	/**< @brief Whether ub-ngmax was given.  */
@@ -500,7 +495,6 @@ extern const char *cmdline_parser_lex_wcombine_values[];  /**< @brief Possible v
 extern const char *cmdline_parser_lex_norm_values[];  /**< @brief Possible values for lex-norm. */
 extern const char *cmdline_parser_lex_values[];  /**< @brief Possible values for lex. */
 extern const char *cmdline_parser_lex_dir_values[];  /**< @brief Possible values for lex-dir. */
-extern const char *cmdline_parser_stress_values[];  /**< @brief Possible values for stress. */
 extern const char *cmdline_parser_ub_type_values[];  /**< @brief Possible values for ub-type. */
 extern const char *cmdline_parser_method_values[];  /**< @brief Possible values for method. */
 extern const char *cmdline_parser_cues_values[];  /**< @brief Possible values for cues. */
