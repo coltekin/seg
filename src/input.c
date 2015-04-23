@@ -193,6 +193,7 @@ struct utterance *tokenize(struct input *inp,
     char syl_tmp[maxlen];
     syl_tmp[0] = '\0';
     while(*p) {
+        bool special_sym = true;
         char sym[16]; // should be enough for three utf8 characters
         p += next_utf8_symbol(p, sym);
 
@@ -236,25 +237,31 @@ struct utterance *tokenize(struct input *inp,
 
             u->phon->seq[u->phon->len] = sigma_add_phon(inp, sym);
             u->phon->feat[u->phon->len] |= stress;
-            if (inp->mode & (INPMODE_SYL | INPMODE_PSYL)) {
-                if(syl_boundary) {
-                    u->syl->seq[u->syl->len] = sigma_add_syl(inp, syl_tmp);
-                    u->syl->feat[u->syl->len] = SEGFEAT_ISSYL | stress;
-                    syl_tmp[0]= '\0';
-                    u->syl->len += 1;
-                    stress = 0;
-                    syl_boundary = false;
-                }
+            u->phon->len += 1;
+            special_sym = false;
+            syl_boundary = false;
+        }
+
+        if (*p == '\0') {
+            syl_boundary = true;
+        }
+
+        if (inp->mode & (INPMODE_SYL | INPMODE_PSYL)) {
+            if (!special_sym) {
                 strcat(syl_tmp, sym);
-                if (*p == '\0') {
-                    u->syl->seq[u->syl->len] = sigma_add_syl(inp, syl_tmp);
-                    u->syl->len += 1;
-                }
-            } else {
+            }
+
+            if(syl_boundary && syl_tmp[0]) {
+                u->syl->seq[u->syl->len] = sigma_add_syl(inp, syl_tmp);
+                u->syl->feat[u->syl->len] = SEGFEAT_ISSYL | stress;
+                syl_tmp[0]= '\0';
+                u->syl->len += 1;
                 stress = 0;
             }
-            u->phon->len += 1;
+        } else {
+            stress = 0;
         }
+
     }
 
     u->phon->seq = xrealloc(u->phon->seq, 
@@ -267,6 +274,7 @@ struct utterance *tokenize(struct input *inp,
         u->syl->feat = xrealloc(u->syl->feat, 
                 (u->syl->len + 1) * sizeof *(u->syl->feat));
     }
+
     return u;
 }
 

@@ -87,6 +87,7 @@ void process_input(struct input *in)
     size_t prf_off = 0;
     size_t prf_incr = 0;
     uint8_t print_prf_opts = 0;
+    enum seg_unit unit = SEG_PHON;
 
     if (opt.print_header_flag)
         print_prf_opts |= SCORE_OPT_HEADER;
@@ -95,15 +96,16 @@ void process_input(struct input *in)
     if (opt.score_edges_flag) 
         print_prf_opts |= SCORE_EDGES;
 
+    if (opt.syl_given) unit = SEG_SYL;
 
     switch (opt.method_arg) {
         case method_arg_lm:
             seg_func = segment_lm;
             seg_cleanup_func = segment_lm_cleanup;
-            seg_h = segment_lm_init(in, opt.alpha_arg, SEG_PHON);
+            seg_h = segment_lm_init(in, opt.alpha_arg, unit);
         break;
         default:
-            fprintf(stderr, "You did not tell me what to do.");
+            fprintf(stderr, "You did not tell me what to do.\n");
             exit(-1);
         break;
     }
