@@ -201,15 +201,17 @@ struct utterance *tokenize(struct input *inp,
             u->gs_seg->bound[u->gs_seg->len] = u->phon->len;
             u->gs_seg->len += 1;
             while (*p == ' ' || *p == '\t') p++;
-            if (inp->mode * INPMODE_SYL) {
+            if (inp->mode & INPMODE_SYL) {
                 u->syl_seg->bound[u->syl_seg->len] = u->phon->len;
                 u->syl_seg->len += 1;
                 syl_boundary = true;
             }
-        } else if ((inp->mode * INPMODE_SYL) && *sym == '.') {
-            u->syl_seg->bound[u->syl_seg->len] = u->phon->len;
-            u->syl_seg->len += 1;
-            syl_boundary = true;
+        } else if (*sym == '.') {
+            if (inp->mode & INPMODE_SYL) {
+                u->syl_seg->bound[u->syl_seg->len] = u->phon->len;
+                u->syl_seg->len += 1;
+                syl_boundary = true;
+            }
         } else if (!strcmp("ˈ", sym) || *sym == '\'') { // primary stress
             stress = SEGFEAT_STRESS1;
         } else if (!strcmp("ˌ", sym) || *sym == ',') { // secondary stress
