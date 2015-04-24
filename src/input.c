@@ -202,14 +202,10 @@ struct utterance *tokenize(struct input *inp,
             u->gs_seg->len += 1;
             while (*p == ' ' || *p == '\t') p++;
             if (inp->mode & INPMODE_SYL) {
-                u->syl_seg->bound[u->syl_seg->len] = u->phon->len;
-                u->syl_seg->len += 1;
                 syl_boundary = true;
             }
         } else if (*sym == '.') {
             if (inp->mode & INPMODE_SYL) {
-                u->syl_seg->bound[u->syl_seg->len] = u->phon->len;
-                u->syl_seg->len += 1;
                 syl_boundary = true;
             }
         } else if (!strcmp("ˈ", sym) || *sym == '\'') { // primary stress
@@ -259,6 +255,10 @@ struct utterance *tokenize(struct input *inp,
                 syl_tmp[0]= '\0';
                 u->syl->len += 1;
                 stress = 0;
+                if (*p != '\0') {
+                    u->syl_seg->bound[u->syl_seg->len] = u->phon->len;
+                    u->syl_seg->len += 1;
+                }
             }
         } else {
             stress = 0;

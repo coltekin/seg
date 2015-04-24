@@ -44,7 +44,7 @@
 #include "lm.h"
 #include "xalloc.h"
 
-extern struct input *inp_dbg;
+static struct input *inp_dbg;
 size_t idx_dbg; // REMOVE ME
 
 static void segment_lm_update(struct unitseq *u, struct segmentation *seg, 
@@ -61,12 +61,25 @@ static double wordscore(struct unitseq *u, size_t first, size_t last,
 
     if (score != 0.0) { // existing word
         score = log(o->alpha) + log(score);
+
+        printf("exist: ");
+        for (i = first; i <= last; i++) {
+            printf("%s.", inp_dbg->sigma[u->seq[i]].str);
+        }
+        printf(" --> %0.3f\n", score);
+
     } else {            // new word
         score = log(1 - o->alpha);
         for (i = first; i <= last; i++) {
             score += log ((double) (o->u_count[u->seq[i]] + 1) /
                           (double) (o->nunits + 1));
         }
+
+        printf("new: ");
+        for (i = first; i <= last; i++) {
+            printf("%s.", inp_dbg->sigma[u->seq[i]].str);
+        }
+        printf(" --> %0.3f\n", score);
     }
     return score;
 }
@@ -84,11 +97,14 @@ struct seg_handle *segment_lm_init(struct input *in, float alpha,
     h->options = o;
     o->alpha = alpha;
     o->lex = t;
-    o->nunits = in->sigma_len - 2;
+    o->nunits = (unit == SEG_SYL) ? in->sigma_nsyl - 2 : 
+                                    in->sigma_nph - 2;
 //    o->u_count = xcalloc(in->sigma_len + 1, sizeof *o->u_count);
     o->u_count = xmalloc((in->sigma_len + 1) * sizeof *o->u_count);
     size_t i;
     for (i = 0; i < in->sigma_len + 1; i++) o->u_count[i] = 1;
+
+    inp_dbg = in; // REMOVE ME
 
     return h;
 }
@@ -108,6 +124,7 @@ segment_lm(struct seg_handle *h, size_t idx)
 
     idx_dbg = idx; // REMOVE ME
 
+    printf("\n\n---------------------------\n");
     for (j = 0; j < len; j++) {
         best_score[j] = 0.0;
         best_start[j] = 0;
@@ -153,6 +170,20 @@ segment_lm(struct seg_handle *h, size_t idx)
         }
     }
 
+    if (seg) {
+        size_t start = 0; 
+        size_t i = 0;
+        printf("segment: ");
+        for (i = 0; i < seg->len; i++) {
+            for(j = start; j < seg->bound[i]; j++) {
+                printf("%s.", inp_dbg->sigma[seq->seq[j]].str);
+            }
+            printf(" ");
+            start = seg->bound[i];
+        }
+        printf("\n");
+    }
+
     segment_lm_update(seq, seg, opt);
 
     return seg;
@@ -183,6 +214,7 @@ static void segment_lm_update(struct unitseq *u, struct segmentation *seg,
 void segment_lm_cleanup(struct seg_handle *h)
 {
     struct seg_lm_options *opt = h->options;
+
     free(opt->u_count);
     trie_free(opt->lex);
     free(opt);

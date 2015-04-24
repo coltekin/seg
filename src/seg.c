@@ -119,6 +119,13 @@ void process_input(struct input *in)
 
         out[i] = seg_func(seg_h, i);
 
+        if (unit == SEG_SYL && out[i]) { // convert syllables to phones
+            size_t j;
+            for (j = 0; j < out[i]->len; j++) {
+                out[i]->bound[j] = in->u[i]->syl_seg->bound[j];
+            }
+        }
+
         /* print the progress if requested */
         if (opt.progress_given) {
             if((i %  opt.progress_arg) == 0) {
