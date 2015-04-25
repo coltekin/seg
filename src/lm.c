@@ -61,25 +61,12 @@ static double wordscore(struct unitseq *u, size_t first, size_t last,
 
     if (score != 0.0) { // existing word
         score = log(o->alpha) + log(score);
-
-        printf("exist: ");
-        for (i = first; i <= last; i++) {
-            printf("%s.", inp_dbg->sigma[u->seq[i]].str);
-        }
-        printf(" --> %0.3f\n", score);
-
     } else {            // new word
         score = log(1 - o->alpha);
         for (i = first; i <= last; i++) {
             score += log ((double) (o->u_count[u->seq[i]] + 1) /
                           (double) (o->nunits + 1));
         }
-
-        printf("new: ");
-        for (i = first; i <= last; i++) {
-            printf("%s.", inp_dbg->sigma[u->seq[i]].str);
-        }
-        printf(" --> %0.3f\n", score);
     }
     return score;
 }
@@ -124,7 +111,6 @@ segment_lm(struct seg_handle *h, size_t idx)
 
     idx_dbg = idx; // REMOVE ME
 
-    printf("\n\n---------------------------\n");
     for (j = 0; j < len; j++) {
         best_score[j] = 0.0;
         best_start[j] = 0;
@@ -168,20 +154,6 @@ segment_lm(struct seg_handle *h, size_t idx)
             lastch = firstch - 1;
             firstch = best_start[lastch];
         }
-    }
-
-    if (seg) {
-        size_t start = 0; 
-        size_t i = 0;
-        printf("segment: ");
-        for (i = 0; i < seg->len; i++) {
-            for(j = start; j < seg->bound[i]; j++) {
-                printf("%s.", inp_dbg->sigma[seq->seq[j]].str);
-            }
-            printf(" ");
-            start = seg->bound[i];
-        }
-        printf("\n");
     }
 
     segment_lm_update(seq, seg, opt);
