@@ -183,10 +183,60 @@ static void segment_lm_update(struct unitseq *u, struct segmentation *seg,
     o->nunits +=  u->len - first;
 }
 
+
+void segment_lm_write_model(struct seg_handle *h, char *filename)
+{
+    FILE *fp;
+    struct seg_lm_options *opt = h->options;
+    struct trie_iter *ti = trie_iter_init(opt->lex);
+    segunit_t *seq = NULL;
+    size_t len;
+    struct trie_node  *node = NULL;
+    size_t i;
+    bool unit_exists[h->in->sigma_len + 1];
+
+    if (filename == NULL) {
+        fp = stdout;
+    } else if(!(fp = fopen(filename, "w"))) {
+        fprintf(stderr, "Cannot open file `%s' for writing\n", filename);
+        exit(-1);
+    }
+
+    fprintf(fp, "alpha\t%f\n", opt->alpha);
+
+    for (i = 1; i <= h->in->sigma_len; i++) {
+        unit_exists[i] = false;
+    }
+    while ((node = trie_iter_next(ti, &seq, &len))) {
+        segunit_t sym = seq[len - 1];
+        if (!unit_exists[sym]) {
+            unit_exists[sym] = true;
+        }
+
+        if (node->count_final) {
+            fprintf(fp, "%zu\t", node->count_final);
+            for (i = 0; i < len; i++) {
+                fprintf(fp, "%s", h->in->sigma[seq[i]].str);
+            }
+            fprintf(fp, "\n");
+        }
+    }
+
+    fprintf(fp, "\n\n");
+    for (i = 1; i <= h->in->sigma_len; i++) {
+        if (unit_exists[i]) {
+            fprintf(fp, "%zu\t%s\n", opt->u_count[i], h->in->sigma[i].str);
+        }
+    }
+
+    fclose(fp);
+}
+
 void segment_lm_cleanup(struct seg_handle *h)
 {
     struct seg_lm_options *opt = h->options;
 
+    segment_lm_write_model(h, "test-model.out");
     free(opt->u_count);
     trie_free(opt->lex);
     free(opt);
