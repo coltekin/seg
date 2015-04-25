@@ -122,7 +122,7 @@ void process_input(struct input *in)
         if (unit == SEG_SYL && out[i]) { // convert syllables to phones
             size_t j;
             for (j = 0; j < out[i]->len; j++) {
-                out[i]->bound[j] = in->u[i]->syl_seg->bound[j];
+                out[i]->bound[j] = in->u[i]->syl_seg->bound[out[i]->bound[j] - 1];
             }
         }
 
