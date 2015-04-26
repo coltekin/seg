@@ -79,11 +79,9 @@ int main(int argc, char **argv)
  */
 void process_input(struct input *in)
 {
-    struct segmentation *(*seg_func)(struct seg_handle *, size_t);
-    void (*seg_cleanup_func)(struct seg_handle *);
     struct segmentation **out = malloc(in->len * sizeof *out);
     size_t i;
-    struct seg_handle *seg_h;
+    struct seg_handle *h;
     size_t prf_off = 0;
     size_t prf_incr = 0;
     uint8_t print_prf_opts = 0;
@@ -100,9 +98,7 @@ void process_input(struct input *in)
 
     switch (opt.method_arg) {
         case method_arg_lm:
-            seg_func = segment_lm;
-            seg_cleanup_func = segment_lm_cleanup;
-            seg_h = segment_lm_init(in, opt.alpha_arg, unit);
+            h = lm_init(in, opt.alpha_arg, unit);
         break;
         default:
             fprintf(stderr, "You did not tell me what to do.\n");
@@ -117,7 +113,7 @@ void process_input(struct input *in)
 
     for (i = 0; i < in->len; i++) {
 
-        out[i] = seg_func(seg_h, i);
+        h->segment_range_incremental(h, i, i, out + i);
 
         if (unit == SEG_SYL && out[i]) { // convert syllables to phones
             size_t j;
@@ -154,7 +150,7 @@ void process_input(struct input *in)
         }
     }
 
-    seg_cleanup_func(seg_h);
+    h->cleanup(h);
 
     write_segs(opt.output_arg, out, in);
 

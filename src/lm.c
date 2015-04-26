@@ -47,11 +47,8 @@
 static struct input *inp_dbg;
 size_t idx_dbg; // REMOVE ME
 
-static void segment_lm_update(struct unitseq *u, struct segmentation *seg, 
-        struct seg_lm_options *o);
-
 static double wordscore(struct unitseq *u, size_t first, size_t last, 
-        struct seg_lm_options *o)
+        struct lm_options *o)
 {
     double  score;
     size_t i;
@@ -71,17 +68,26 @@ static double wordscore(struct unitseq *u, size_t first, size_t last,
     return score;
 }
 
-struct seg_handle *segment_lm_init(struct input *in, float alpha,
+struct seg_handle *lm_init(struct input *in, float alpha,
         enum seg_unit unit)
 {
     struct seg_handle *h = malloc(sizeof *h);
-    struct seg_lm_options *o = malloc(sizeof *o);
+    struct lm_options *o = malloc(sizeof *o);
     struct trie *t = trie_init(in->sigma_len + 1);
 
     h->method = SEG_LM;
     h->in = in;
     h->unit = unit;
     h->options = o;
+
+    h->segment = lm_segment;
+    h->segment_range = lm_segment_range;
+    h->segment_incremental = lm_segment_incremental;
+    h->segment_range_incremental = lm_segment_range_incremental;
+    h->estimate = lm_estimate;
+    h->estimate_range = lm_estimate_range;
+    h->cleanup = lm_cleanup;
+
     o->alpha = alpha;
     o->lex = t;
     o->nunits = (unit == SEG_SYL) ? in->sigma_nsyl - 2 : 
@@ -96,22 +102,26 @@ struct seg_handle *segment_lm_init(struct input *in, float alpha,
     return h;
 }
 
+/**
+ * lm_segment_single -  segment a given sequence 
+ *
+ * @seq:                the sequence
+ * @opt:                structure that holds the model options and 
+ *                      parameters estimated (so far).
+ *
+ *                      return value is a segmentation structure 
+ *                      allocated and filled.
+ */
 struct segmentation * 
-segment_lm(struct seg_handle *h, size_t idx)
+lm_segment_single(struct unitseq *seq, struct lm_options *opt)
 {
-    struct utterance *u = h->in->u[idx];
-    struct unitseq *seq = (h->unit == SEG_PHON) ?  u->phon : u->syl;
-    int len =(h->unit == SEG_PHON) ? u->phon->len : u->syl->len;
     int j, firstch, lastch;
-    double  best_score[len];
-    size_t  best_start[len];
+    double  best_score[seq->len];
+    size_t  best_start[seq->len];
     struct segmentation *seg = NULL;
     size_t nsegs;
-    struct seg_lm_options *opt = h->options;
 
-    idx_dbg = idx; // REMOVE ME
-
-    for (j = 0; j < len; j++) {
+    for (j = 0; j < seq->len; j++) {
         best_score[j] = 0.0;
         best_start[j] = 0;
     }
@@ -119,7 +129,7 @@ segment_lm(struct seg_handle *h, size_t idx)
     // these loops are almost verbatim copies from Brent's (1999) 
     // search algorithm.
     // first: calculate best word ending in each possible end point.
-    for (lastch = 0; lastch < len; lastch++){
+    for (lastch = 0; lastch < seq->len; lastch++){
         best_score[lastch] = wordscore(seq, 0, lastch, opt);
         best_start[lastch] = 0;
         for (firstch = 1; firstch <= lastch; firstch++) {
@@ -134,7 +144,7 @@ segment_lm(struct seg_handle *h, size_t idx)
     // second: insert boundaries starting from the back.
     //
     // first pass: get the number of segments
-    firstch = best_start[len - 1];
+    firstch = best_start[seq->len - 1];
     nsegs = 0;
     while (firstch > 0) {
         nsegs += 1;
@@ -146,7 +156,7 @@ segment_lm(struct seg_handle *h, size_t idx)
         seg = malloc(sizeof *seg);
         seg->len = nsegs;
         seg->bound = malloc(seg->len * sizeof *seg->bound);
-        lastch = len - 1;
+        lastch = seq->len - 1;
         firstch = best_start[lastch];
         j = seg->len;
         for (j = seg->len - 1; j >= 0; j--) {
@@ -156,38 +166,43 @@ segment_lm(struct seg_handle *h, size_t idx)
         }
     }
 
-    segment_lm_update(seq, seg, opt);
-
     return seg;
 }
 
-static void segment_lm_update(struct unitseq *u, struct segmentation *seg, 
-        struct seg_lm_options *o)
+/**
+ *  lm_update_single - update the model parameters based on the given
+ *                     @seg.
+ *  @u:                the sequence representing the input (utterance).
+ *  @seg:              the segmentation.
+ *  @opt:              model options and parameters estimated so far.
+ */
+static void lm_update_single(struct unitseq *u, struct segmentation *seg, 
+        struct lm_options *opt)
 {
     size_t i, j, first, last;
 
     first = 0;
     for (i = 0; seg != NULL && i < seg->len; i++) {
         last = seg->bound[i];
-        trie_insert(o->lex, u->seq + first,  last - first);
+        trie_insert(opt->lex, u->seq + first,  last - first);
         for (j = first; j < last; j++) {
-            o->u_count[u->seq[j]] += 1;
+            opt->u_count[u->seq[j]] += 1;
         }
-        o->nunits += last - first;
+        opt->nunits += last - first;
         first = last;
     }
-    trie_insert(o->lex, u->seq + first, u->len - first);
+    trie_insert(opt->lex, u->seq + first, u->len - first);
     for (j = first; j < u->len; j++) {
-        o->u_count[u->seq[j]] += 1;
+        opt->u_count[u->seq[j]] += 1;
     }
-    o->nunits +=  u->len - first;
+    opt->nunits +=  u->len - first;
 }
 
 
-void segment_lm_write_model(struct seg_handle *h, char *filename)
+void lm_write_model(struct seg_handle *h, char *filename)
 {
     FILE *fp;
-    struct seg_lm_options *opt = h->options;
+    struct lm_options *opt = h->options;
     struct trie_iter *ti = trie_iter_init(opt->lex);
     segunit_t *seq = NULL;
     size_t len;
@@ -232,13 +247,70 @@ void segment_lm_write_model(struct seg_handle *h, char *filename)
     fclose(fp);
 }
 
-void segment_lm_cleanup(struct seg_handle *h)
+void lm_cleanup(struct seg_handle *h)
 {
-    struct seg_lm_options *opt = h->options;
+    struct lm_options *opt = h->options;
 
-    segment_lm_write_model(h, "test-model.out");
     free(opt->u_count);
     trie_free(opt->lex);
     free(opt);
     free(h);
+}
+
+void lm_segment_range_incremental(struct seg_handle *h, 
+        size_t start, size_t end,
+        struct segmentation **out)
+{
+    struct lm_options *opt = h->options;
+    size_t i;
+    for (i = start; i <= end; i++) {
+        struct utterance *u = h->in->u[i];
+        struct unitseq *seq = (h->unit == SEG_PHON) ?  u->phon : u->syl;
+        struct segmentation *seg = lm_segment_single(seq, opt);
+        out[i - start] = seg;
+        lm_update_single(seq, seg, opt);
+    }
+}
+
+void lm_segment_incremental(struct seg_handle *h, struct segmentation **out)
+{
+    lm_segment_range_incremental(h, 0, h->in->len - 1, out);
+}
+
+void lm_segment_range(struct seg_handle *h, 
+        size_t start, size_t end,
+        struct segmentation **out)
+{
+    struct lm_options *opt = h->options;
+    size_t i;
+    for (i = start; i < end; i++) {
+        struct utterance *u = h->in->u[i];
+        struct unitseq *seq = (h->unit == SEG_PHON) ?  u->phon : u->syl;
+        struct segmentation *seg = lm_segment_single(seq, opt);
+        out[i - start] = seg;
+    }
+}
+
+void lm_segment(struct seg_handle *h, struct segmentation **out)
+{
+    lm_segment_range(h, 0, h->in->len - 1, out);
+}
+
+void lm_estimate_range(struct seg_handle *h, size_t start, size_t end)
+{
+    struct lm_options *opt = h->options;
+    size_t i;
+    for (i = start; i < end; i++) {
+        struct utterance *u = h->in->u[i];
+        struct unitseq *seq = (h->unit == SEG_PHON) ?  u->phon : u->syl;
+        struct segmentation *seg = lm_segment_single(seq, opt);
+        lm_update_single(seq, seg, opt);
+        free(seg->bound);
+        free(seg);
+    }
+}
+
+void lm_estimate(struct seg_handle *h)
+{
+    lm_estimate_range(h, 0, h->in->len - 1);
 }

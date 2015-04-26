@@ -92,6 +92,24 @@ struct seg_handle {
     enum seg_unit unit;     // basic unit to use for segmentation
     struct input *in;       // the input structure
     void *options;          // method specific options
+
+/**
+ * the following function pointers define the interface of a
+ * segmentation model. Besides these, a model provides a
+ * <model>_init() function where the information below is filled in.
+ * See lm.h for function descriptions.
+ **/
+    void (*segment)(struct seg_handle *h, struct segmentation **out);
+    void (*segment_range)(struct seg_handle *h, size_t start, size_t end, 
+                         struct segmentation **out);
+    void (*segment_incremental)(struct seg_handle *h, 
+                                struct segmentation **out);
+    void (*segment_range_incremental)(struct seg_handle *h, 
+                                     size_t start, size_t end, 
+                                     struct segmentation **out);
+    void (*estimate)(struct seg_handle *h);
+    void (*estimate_range)(struct seg_handle *h, size_t start, size_t end);
+    void (*cleanup)(struct seg_handle *h);
 };
 
 #endif // _SEG_H

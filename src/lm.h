@@ -23,19 +23,89 @@
 #include "seg.h"
 #include "trie.h"
 
-struct seg_lm_options {
+struct lm_options {
     float alpha;       // the paremeter
     struct trie *lex;  // holds the lexical units discovered so far
     size_t *u_count;   // hods the counts of each basic unit (phone or syl.)
     size_t nunits;     // total number of basic units
 };
 
-struct seg_handle *segment_lm_init(struct input *in, float alpha, 
-        enum seg_unit unit);
+struct seg_handle *lm_init(struct input *in, float alpha, enum seg_unit unit);
 
 struct segmentation *segment_lm(struct seg_handle *h, size_t i);
 
-void segment_lm_cleanup(struct seg_handle *h);
+void lm_cleanup(struct seg_handle *h);
+
+/**
+ * lm_segment_range_incremental - segment the given range in the input 
+ *                                with the current model and update
+ *                                model parameters.
+ * @h:                            segmentation handle.
+ * @start:                        index of the first utterance to be 
+ *                                segmented
+ * @end:                          index of the last utterance to be segmented
+ * @out:                          an array of segmentation structures that is
+ *                                enough to hold the given range.
+ *
+ *          note: the given range is inclusive. 'start=0, end=0' will
+ *          process the utterance with index 0.
+ */
+void lm_segment_range_incremental(struct seg_handle *h, 
+        size_t start, size_t end,
+        struct segmentation **out);
+
+/**
+ * lm_segment_incremental - segment the given full input with the current 
+ *                          model, while updateing the model
+ *                          parameters.
+ * @h:                      segmentation handle.
+ * @out:                    an array of segmentation structures that is
+ *                          enough to hold the given range.
+ */
+void lm_segment_incremental(struct seg_handle *h, struct segmentation **out);
+
+/**
+ * lm_segment_range - segment the given range in the input with the
+ *                    current model.
+ * @h:                segmentation handle.
+ * @start:            index of the first utterance to be segmented
+ * @end:              index of the last utterance to be segmented
+ * @out:              an array of segmentation structures that is
+ *                    enough to hold the given range.
+ *
+ *          note: the given range is inclusive. 'start=0, end=0' will
+ *          process the utterance with index 0.
+ */
+void lm_segment_range(struct seg_handle *h, 
+        size_t start, size_t end,
+        struct segmentation **out);
+
+/**
+ * lm_segment - segment the given full input with the current model.
+ * @h:                segmentation handle.
+ * @out:              an array of segmentation structures that is
+ *                    enough to hold the given range.
+ */
+void lm_segment(struct seg_handle *h, struct segmentation **out);
+
+/**
+ * lm_estimate_range - estimate the model parameters from the given
+ *                     range in the input .
+ * @h:                 segmentation handle.                    
+ * @start:             index of the first utterance to be used for estimation
+ * @end:               index of the last utterance to be used for estimation
+ *
+ *          note: the given range is inclusive. 'start=0, end=0' will
+ *          process the utterance with index 0.
+ */
+void lm_estimate_range(struct seg_handle *h, size_t start, size_t end);
+
+/**
+ * lm_estimate - estimate the model parameters from the complete
+ *               input.
+ * @h:           segmentation handle.                    
+ */
+void lm_estimate(struct seg_handle *h);
 
 
 
