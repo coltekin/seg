@@ -305,8 +305,10 @@ void lm_estimate_range(struct seg_handle *h, size_t start, size_t end)
         struct unitseq *seq = (h->unit == SEG_PHON) ?  u->phon : u->syl;
         struct segmentation *seg = lm_segment_single(seq, opt);
         lm_update_single(seq, seg, opt);
-        free(seg->bound);
-        free(seg);
+        if (seg) {
+            free(seg->bound);
+            free(seg);
+        }
     }
 }
 
