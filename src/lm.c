@@ -19,7 +19,7 @@
 */
 
 /*
- * The functions here do "language modeling" style incremental 
+  The functions here do "language modeling" style incremental 
  * segmentation. 
  *
  * The probability of a segmentation is simply the 
@@ -57,9 +57,9 @@ static double wordscore(struct unitseq *u, size_t first, size_t last,
     score = trie_relfreq(o->lex, u->seq + first, last - first + 1);
 
     if (score != 0.0) { // existing word
-        score = log(o->alpha) + log(score);
+        score = log(1 - o->alpha) + log(score);
     } else {            // new word
-        score = log(1 - o->alpha);
+        score = log(o->alpha);
         for (i = first; i <= last; i++) {
             score += log ((double) (o->u_count[u->seq[i]] + 1) /
                           (double) (o->nunits + 1));
@@ -95,6 +95,8 @@ struct seg_handle *lm_init(struct input *in, float alpha,
                                     in->sigma_nph - 2;
 //    o->u_count = xcalloc(in->sigma_len + 1, sizeof *o->u_count);
     o->u_count = xmalloc((in->sigma_len + 1) * sizeof *o->u_count);
+
+    // start with uniform distribution for the phonemes.
     size_t i;
     for (i = 0; i < in->sigma_len + 1; i++) o->u_count[i] = 1;
 
