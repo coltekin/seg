@@ -87,6 +87,7 @@ struct seg_handle *lm_init(struct input *in, float alpha,
     h->estimate = lm_estimate;
     h->estimate_range = lm_estimate_range;
     h->cleanup = lm_cleanup;
+    h->write_model = lm_write_model;
 
     o->alpha = alpha;
     o->lex = t;

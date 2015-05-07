@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "579ef73"
+#define CMDLINE_PARSER_VERSION "950e99c"
 #endif
 
 enum enum_print_ptp { print_ptp__NULL = -1, print_ptp_arg_jp = 0, print_ptp_arg_tp, print_ptp_arg_mi, print_ptp_arg_sv, print_ptp_arg_h, print_ptp_arg_rtp, print_ptp_arg_rsv, print_ptp_arg_rh, print_ptp_arg_none };
@@ -92,6 +92,9 @@ struct gengetopt_args_info
   long shuffle_arg;	/**< @brief randomize the input utternaces. if SEED is not given, current time is used as seed (default='0').  */
   char * shuffle_orig;	/**< @brief randomize the input utternaces. if SEED is not given, current time is used as seed original value given at command line.  */
   const char *shuffle_help; /**< @brief randomize the input utternaces. if SEED is not given, current time is used as seed help description.  */
+  char * write_mode_arg;	/**< @brief write model output to a file.  */
+  char * write_mode_orig;	/**< @brief write model output to a file original value given at command line.  */
+  const char *write_mode_help; /**< @brief write model output to a file help description.  */
   int print_flag;	/**< @brief print predictability measures given in --pred and exit (default=off).  */
   const char *print_help; /**< @brief print predictability measures given in --pred and exit help description.  */
   int print_lb_flag;	/**< @brief print word boundary information for each measure (default=off).  */
@@ -299,6 +302,7 @@ struct gengetopt_args_info
   unsigned int inlex_given ;	/**< @brief Whether inlex was given.  */
   unsigned int outlex_given ;	/**< @brief Whether outlex was given.  */
   unsigned int shuffle_given ;	/**< @brief Whether shuffle was given.  */
+  unsigned int write_mode_given ;	/**< @brief Whether write-mode was given.  */
   unsigned int print_given ;	/**< @brief Whether print was given.  */
   unsigned int print_lb_given ;	/**< @brief Whether print-lb was given.  */
   unsigned int print_ub_given ;	/**< @brief Whether print-ub was given.  */

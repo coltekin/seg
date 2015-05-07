@@ -55,6 +55,9 @@ option "outlex" O "output lexicon file"
 option "shuffle" - "randomize the input utternaces. if SEED is not given, current time is used as seed"
        long typestr="SEED" default="0" optional argoptional 
 
+option "write-mode" M "write model output to a file"
+        string typestr="filename" optional
+
 section "Options for printing segmentation measures"
 
 option "print" p "print predictability measures given in --pred and exit"

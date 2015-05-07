@@ -110,6 +110,7 @@ struct seg_handle {
     void (*estimate)(struct seg_handle *h);
     void (*estimate_range)(struct seg_handle *h, size_t start, size_t end);
     void (*cleanup)(struct seg_handle *h);
+    void (*write_model)(struct seg_handle *h, char *filename);
 };
 
 #endif // _SEG_H

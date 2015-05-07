@@ -150,6 +150,9 @@ void process_input(struct input *in)
         }
     }
 
+    if (opt.write_mode_given) {
+        h->write_model(h, opt.write_mode_arg);
+    }
     h->cleanup(h);
 
     write_segs(opt.output_arg, out, in);

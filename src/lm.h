@@ -107,6 +107,12 @@ void lm_estimate_range(struct seg_handle *h, size_t start, size_t end);
  */
 void lm_estimate(struct seg_handle *h);
 
+/**
+ * lm_write_model - write the model paramters to a file.
+ * @h:           segmentation handle.                    
+ * @filename:    name of the file
+ */
+void lm_write_model(struct seg_handle *h, char *filename);
 
 
 #endif // _SEG_LM_H
