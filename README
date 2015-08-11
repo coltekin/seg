@@ -1,88 +1,28 @@
-This program (named creatively as 'seg') implements a set of
-incremental algorithms for learning segmentation described in my PhD
-thesis and some of the later work. The thesis can be 
-found at <http://dissertations.ub.rug.nl/faculties/arts/2011/c.coltekin/>. 
-
-The latest version of this application can be obtained from
-<https://bitbucket.org/coltekin/seg>.
-
-Besides a standard C compiler and 'make', you need
-
-- GLib -- http://developer.gnome.org/glib/
-- GNU scientific library www.gnu.org/s/gsl/
-- The command-line options are managed using gengetopt
-  <http://www.gnu.org/software/gengetopt/>. Generated cmdline.[ch]
-  files are included in the distribution. You do not need to install
-  gengetopt, unless you want to change the command line interface.
-
-Typing 'make' should build the executable 'seg'. Here are a few
-example runs:
-
-- Segment using predictability cue only, using defaults for the
-  context size:
-```
-    ./seg -i data/br-phono.txt \
-          -m combine \
-          --cues=pred \
-          --pred-m=mi
-```
-- The same, but discard the output, print precision/recall/f-score 
-```
-    ./seg -i data/br-phono.txt \
-          -o /dev/null \
-          -m combine \
-          --cues=pred \
-          --pred-m=mi \
-          --print-prf \
-          --print-head
-```
-- Combine predictability with measures mi, h, and rh and utterance
-  boundaries (with default context options). Again, discard the
-  output, and print a LaTex tabular instead of comma-separated values.
-```
-    ./seg -i data/br-phono.txt \
-          -o /dev/null \
-          -m combine \
-          --cues=pred,ub \
-          --pred-m=mi \
-          --print-prf \
-          --print-head \
-          --print-latex
-```
-- Do not segment, but print the PMI value for every possible boundary
-  location:
-```
-    ./seg -i data/br-phono.txt \
-        --print \
-        --pred-m=mi
-```
-
-See the output of `seg -h` for more information on the usage.
-
-The code is tested well, and should work fine on any POSIX-like
-environment, but it may not be easy to digest as it also uses some
-code from earlier projects. The command line options may be confusing
-and not well-documented at times. I plan to improve the readability
-and usability of the software while working on a few future projects I
-have in mind.
-
-This software can be used/modified/distributed under the terms of GNU
-General Public License version 3 or later. The licenses and terms of
-the corpora included may be different than the license of the
-application. See the README file(s) in the data/ directory for more
-information.
-
-Questions, comments or corrections are welcome at cagri@coltekin.net
-
-If you use this application for your research, please cite the
-relevant publication(s) from the list below :
+This is a new version of the segmentation application (named
+creatively as 'seg') that implements a set of incremental algorithms
+for learning segmentation described in:
 
 - Cağrı Çöltekin (2011). "Catching Words in a Stream of Speech:
   Computational simulations of segmenting transcribed child-directed
   speech." PhD thesis. University of Groningen
+  URL: http://dissertations.ub.rug.nl/faculties/arts/2011/c.coltekin/
 - Çağrı Çöltekin John Nerbonne (2014). An explicit statistical model
   of learning lexical segmentation using multiple cues. In: Workshop
   on Cognitive Aspects of Computational Language Learning, EACL 2014
+  URL: https://www.aclweb.org/anthology/W/W14/W14-0505.pdf
 
-For proper attribution to the data distributed here, please see the
-README files under the data/ directory.
+The earlier version(s) are accessible from
+https://github.com/coltekin/seg/.
+
+This particular version includes a major rewrite of the internals of
+the application to support UTF-8 encoded input. It currently supports
+only the "LM" algorithm, others and potentially more segmentation
+algorithms are planned to be implemented within this version.
+
+For proper attribution to the data distributed with this application,
+please see the README files under the data/ directory.
+
+The application is written in pure C, you should be able to compile
+on any POSIX compliant operating system by simply typing 'make' in the
+src/ directory. The resulting command line tool will be called 'seg',
+the command './seg -h' gives an overview of options available.
