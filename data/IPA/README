@@ -1,0 +1,105 @@
+The files in this directory are the corpora used in this study.
+
+* The BR corpus
+
+The files starting with 'br-' are the BR corpus. The original data is
+downloaded from Sharon Goldwater's web site. For proper use of
+this corpus see README.Goldwater. The files br-text.txt and
+br-phono.txt are the source files. The other files include
+additions/modifications described below.
+
+br-ipa.txt      is the version of br-phono.txt that is converted to
+                IPA. The conversion is done based on the CMU
+                pronunciation dictionary. Few words that were not
+                found in the dictionary were transcribed manually.
+                Both manual and dictionary-based phonemic
+                transcriptions of the words found in the BR corpus
+                can be found in 'br-dict.cmu', which contains original
+                ARPABET symbols, which, in turn, converted to IPA
+                based on Wikipedia descriptions, the mapping can be
+                found in 'ipa-arpabet.txt' and the actual script that is
+                used for the conversion is 'arpabet-to-ipa.sed'. The
+                converted transcripts form the fourth column of the
+                'br-dict.txt' (see below). The conversion from
+                br-text.txt to br-ipa.txt is done through the python
+                script 'br-to-ipa.py' (which simply relaces every
+                occurence of a word by corresponding IPA version from
+                br-dict.txt)
+        
+br-dict.txt     is a modified version of the file documenting the mapping 
+                between the orthographic forms and phonemic forms of
+                all words in the corpus. The file is a six-column 
+                tab-separated file. The columns are:
+                    1. The orthographic form of the word as found in
+                       the original transcriptions.
+                    2. The phonemic transcription used by Brent.
+                    3. IPA transcription, obtained as described above.
+                    4. The phonemic transcriptions in column 2 with
+                       morpheme boundaries. 
+                    5. IPA transcriptions with morpheme boundaries.
+                    6. Frequency of the word in the corpus
+                The morpheme boundaries are marked either with a '+'
+                (compounds and contractions like aren't) or a '-'
+                (boundaries between the root and the affixes).
+
+br-ipa.syllabified      contains syllabified version of the br-ipa.txt.
+                        Syllabification is done word by word using the
+                        script syllabify.py which is a version of 
+                        <https://github.com/kylebgorman/syllabify>
+                        modified for IPA input.
+
+br-ipa.u-syllabified    is another syllabified version of br-ipa.txt,
+                        where  word boundaries are ignored.  Hence,
+                        syllables may straddle word boundaries.
+
+
+br-ipa.words.syl
+br-ipa.words.usyl
+br-ipa.morphs.syl
+br-ipa.morphs.usyl  These files are the final input files for
+                    segmentation. The first field after the dot `.'
+                    in the file name indicates whether the
+                    gold-standard segmentation is based on words or
+                    morphemes, and the last field indicates whether
+                    the syllabification is done word-by-word or
+                    utterance-by-utterance. The first of these files
+                    are identical to the br-ipa.syllabified explained
+                    above.
+
+---- 
+tr-text.txt     Turkish child-directed corpus from the CHILDES
+                database. This contains all child-directed utterances
+                from the Aksu corpus. We exclude the file 2haf.cha
+                which seems to be a different transcription of the
+                same recording session in 2ha.cha.  Following Brent,
+                onomatopoeia and interjections are removed. Similarly,
+                every word is transcribed the same way at each
+                occurrence.  Currently we do not employ any
+                phonetic/phonemic transcription, and rely on the fact
+                that Turkish orthography is rather transparent with
+                respect to the standard pronunciation. We may switch
+                to IPA transcriptions in the future.  The script
+                'tr-cds-extract.py' used to process the CHAT files to
+                produce this file.
+
+tr-dict.txt     Similar to br-dict.txt, but only two columns. The
+                first column lists the orthographic form, the second
+                column lists the morphological segmentation.
+
+tr-text.u-syllabified   similar to br-ipa.u-syllabified, this is a
+                        syllabified version of tr-text.txt, where
+                        word boundaries are ignored. Hence, syllables
+                        may straddle word boundaries.
+
+
+tr-text.words.syl
+tr-text.words.usyl
+tr-text.morphs.syl
+tr-text.morphs.usyl     These files are the final input files for
+                        segmentation for Turkish data. Similar to br-
+                        versions of the files, the first field after the dot `.'
+                        in the file name indicates whether the
+                        gold-standard segmentation is based on words or
+                        morphemes, and the last field indicates whether
+                        the syllabification is done word-by-word or
+                        utterance-by-utterance. 
